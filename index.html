@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cricket Notebook — Dice Cricket</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="ball"></div>
+      <div>
+        <h1>Cricket <span>Notebook</span></h1>
+        <div class="sub">Two-player dice cricket · T20 &amp; ODI</div>
+      </div>
+    </div>
+    <div class="tag" id="stadiumTag">Select a ground</div>
+  </header>
+
+  <div class="grid">
+    <!-- ============ LEFT: SETUP ============ -->
+    <div class="card setup">
+      <div class="hd">Match Setup</div>
+      <div class="bd">
+        <div class="matchup" title="Team averages across the 11-man lineup. Bat: higher is better. Bowl: lower is better.">
+          <div class="side"><b><span class="dot-ind"></span>India</b><small id="indAvg"></small></div>
+          <div class="vs">vs</div>
+          <div class="side"><b>Australia<span class="dot-aus" style="margin:0 0 0 5px"></span></b><small id="ausAvg"></small></div>
+        </div>
+
+        <div class="field">
+          <label>Stadium</label>
+          <select id="stadium"></select>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Format</label>
+            <select id="format"></select>
+          </div>
+          <div class="field">
+            <label>Seed</label>
+            <input id="seed" type="number" value="7">
+          </div>
+        </div>
+
+        <button class="btn primary" id="btnSim">▶ Simulate Match</button>
+        <div class="btn-row">
+          <button class="btn ghost" id="btnRandom">🎲 Random seed</button>
+          <button class="btn ghost" id="btnRules">📖 Rules</button>
+        </div>
+
+        <div style="margin-top:14px">
+          <a class="lineup-toggle" id="toggleLineups">Show lineups ▾</a>
+          <div class="lineup hidden" id="lineups"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ RIGHT: LIVE ============ -->
+    <div>
+      <div class="card scoreboard">
+        <div class="sb-head">
+          <div class="sb-team" id="sbA">
+            <div class="tn" id="sbAName">—</div>
+            <div class="score" id="sbAScore">0/0</div>
+            <div class="meta" id="sbAMeta">0.0 ov</div>
+          </div>
+          <div class="sb-mid"></div>
+          <div class="sb-team" id="sbB">
+            <div class="tn" id="sbBName">—</div>
+            <div class="score" id="sbBScore">—</div>
+            <div class="meta" id="sbBMeta"></div>
+          </div>
+        </div>
+        <div class="sb-status" id="sbStatus">Set up a match and hit simulate.</div>
+      </div>
+
+      <div id="liveArea" class="hidden">
+        <div class="crease">
+          <div class="player-chip striker" id="chipStrike">
+            <div class="pn" id="strikeName">—</div>
+            <div class="pr" id="strikeRuns">0</div>
+            <div class="pd" id="strikeDet">0 balls</div>
+            <div class="strikemeter"><i id="strikeMeter" style="width:0%"></i></div>
+          </div>
+          <div class="player-chip" id="chipNon">
+            <div class="pn" id="nonName">—</div>
+            <div class="pr" id="nonRuns">0</div>
+            <div class="pd" id="nonDet">0 balls</div>
+            <div class="strikemeter"><i id="nonMeter" style="width:0%"></i></div>
+          </div>
+        </div>
+        <div class="bowler-line" id="bowlerLine"></div>
+
+        <div class="lastball">
+          <div class="dice"><div class="die" id="die1">–</div><div class="die" id="die2">–</div></div>
+          <div class="txt">
+            <div class="bigres" id="lbBig">Ready</div>
+            <div class="subres" id="lbSub">Press play or step to bowl.</div>
+          </div>
+          <div id="lbPill"></div>
+        </div>
+
+        <div class="playback">
+          <button class="btn ghost" id="btnStepBack">⏮ Ball</button>
+          <button class="btn primary" id="btnPlay" style="width:auto">▶ Play</button>
+          <button class="btn ghost" id="btnStep">Ball ⏭</button>
+          <button class="btn ghost" id="btnSkip">⏭⏭ Skip innings</button>
+          <div class="speed">Speed <input id="speed" type="range" min="60" max="700" value="320"></div>
+        </div>
+
+        <div class="result-banner hidden" id="resultBanner">
+          <div class="w" id="resultW"></div>
+          <div class="m" id="resultM"></div>
+        </div>
+      </div>
+
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="feed">Commentary</div>
+        <div class="tab" data-tab="worm">Run Worm</div>
+        <div class="tab" data-tab="card1">1st Innings Card</div>
+        <div class="tab" data-tab="card2">2nd Innings Card</div>
+      </div>
+
+      <div class="card panel show" data-panel="feed">
+        <div class="hd">Ball-by-ball <span class="mini" id="feedCount"></span></div>
+        <div class="bd" style="padding:0"><div class="feed scrollbar" id="feed">
+          <div class="empty"><div class="big">🏏</div><p>No match yet. Simulate to watch it ball by ball.</p></div>
+        </div></div>
+      </div>
+
+      <div class="card panel" data-panel="worm">
+        <div class="hd">Run worm — cumulative score by over</div>
+        <div class="bd">
+          <div class="legend" id="wormLegend"></div>
+          <div class="chart-wrap"><div id="wormChart"></div><div class="tooltip" id="wormTip"></div></div>
+        </div>
+      </div>
+
+      <div class="card panel" data-panel="card1"><div class="bd" id="card1">
+        <div class="empty"><p>Scorecard appears after simulation.</p></div>
+      </div></div>
+      <div class="card panel" data-panel="card2"><div class="bd" id="card2">
+        <div class="empty"><p>Scorecard appears after simulation.</p></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<div id="rulesModal" class="hidden"></div>
+
+<script src="teams.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
