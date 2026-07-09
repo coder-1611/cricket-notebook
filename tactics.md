@@ -77,6 +77,13 @@ Two spec mechanics interact with bowling changes to reproduce real tactics:
   batsman sitting on safe strikes can fall the **instant a much better bowler comes
   on** — no new strike needed. This is the engine's version of a captain throwing
   the ball to his ace to remove a dangerous, set batsman.
+* **Out by TOTAL strikes (the rating cap).** The second threshold — accumulated
+  strikes reaching the batsman's own rating — is independent of the bowler. When
+  the live average is *not strictly below* the cap (i.e. against equal or weaker
+  bowling), the dismissal is attributed to the cap and reported as
+  **"out — N total strikes"** in the scorecard and "reaches N TOTAL strikes" in
+  commentary. Measured across 300 seeds it accounts for ~2–4% of wickets — rare
+  by design (good bowlers usually strike first via the average), but visible.
 * **Match-ups / protecting a total.** A lower-rated (better) bowler pulls every
   batsman's average down, so concentrating your best bowling into the phases that
   matter (powerplay wickets, death squeeze) directly buys more dismissals.
@@ -106,27 +113,55 @@ The two biggest boundary cells come down a notch; the showpiece hits stay.
 |---------------|------|-----|------|
 | 4,6 | Two 4s (8) | **Four (4)** | biggest single-cell nerf |
 | 2,6 | Double (2) | **Single (1)** | fewer easy twos |
+| 2,2 | Double (2) | **Single (1)** | fewer easy twos |
 | 1,6 (non-IA) | Four (4) | **Double (2)** | IA "two sixes" reward preserved |
 
 Everything else — including 6,6 = two sixes (12) and 4,4 = two 4s (8) — is
 untouched, so big overs still happen, just less relentlessly.
 
-**Result:** T20 first innings **mean ≈ 204, ~6 wickets**, ~200 balls of range
-150–250 — squarely in the requested **180–220** band.
+**Result (600-seed sweep):** T20 first innings **mean ≈ 213, ~6 wickets**, with
+**~26 fours to ~9 sixes (≈ 3:1)** — in the requested **180–220** band.
 
-### ODI profile — build an innings
+### ODI profile — build an innings, keep the fours
 
-Heavier boundary damping (target run rate ≈ 6/over) **plus** a survival bonus so a
-side bats deep instead of being bowled out:
+Boundary damping targets *sixes and doubles*, deliberately **keeping genuine
+fours in the game** (4,5 stays a four, 4,6 becomes one four) so the classic ODI
+shape — plenty of fours, occasional sixes — survives:
 
-* **Boundary damping:** 4,6 → 2, 4,4 → 2, 6,6 → 6 (one six), 4,5 → 2, and several
-  Doubles (2,6 / 2,4 / 2,2 / 1,2) → Singles. Big hits become rotation.
-* **Survival bonus `+6`:** added to *both* dismissal thresholds
-  (`cap = batting + 6`, `avg = floor((bat+bowl)/2) + 6`). ODI batsmen "set" and
-  survive far longer, so innings last the full 50 overs.
+* **Fours preserved:** 4,5 → Four (untouched), 4,6 → one Four.
+* **Sixes rationed:** 6,6 → one six; the IA 1,6 reward → one six (`iaHi`);
+  non-IA 1,6 → Double.
+* **Rotation damped:** several Doubles/Singles (2,6 / 1,4 / 1,3 / 2,4) → Dots and
+  (4,4 / 2,2 / 1,2) trimmed, pulling the middle-overs rate to ~5.7/over.
+* **Survival bonus `+4`:** added to *both* dismissal thresholds
+  (`cap = batting + 4`, `avg = floor((bat+bowl)/2) + 4`). ODI batsmen "set" and
+  survive far longer, so innings last close to the full 50 overs.
 
-**Result:** ODI first innings **mean ≈ 309, ~7 wickets, ~50 overs** at RR ≈ 6.2 —
-the requested **"300/6 ish."**
+**Result (600-seed sweep):** ODI first innings **mean ≈ 302**, with **~35 fours to
+~10 sixes (≈ 3.5:1 four:six ratio)** — the requested **"300-ish"** with a
+realistic boundary mix.
+
+### Powerplay & Death run boost
+
+Real innings aren't flat: sides attack the fielding restrictions up front and slog
+at the death, with a consolidation trough in the middle. A per-format `boost`
+table (applied **only** in the Powerplay and Death phases, on top of the base
+profile) recreates that tempo curve:
+
+* **T20 boost:** 2,4 Double → **Four**; non-IA 1,6 → **Four**.
+* **ODI boost:** the dot-trimmed low rolls come back to life — 2,4 / 2,6 → Double,
+  1,4 → Single, 4,4 → **Four**.
+* IA rewards are never dampened by the boost (`skipIA` guards).
+
+**Measured phase run rates (600 seeds):**
+
+| Phase | T20 rpo | ODI rpo |
+|-------|---------|---------|
+| Powerplay | **11.9** | **8.2** |
+| Middle | 9.8 | 5.7 |
+| Death | **11.0** | **6.5** |
+
+The U-shaped tempo curve of a real limited-overs innings, in both formats.
 
 ### Why this is a clean design
 
@@ -146,9 +181,13 @@ All of the above is covered by `node test.js`:
 * the 84-case base dice table (profiles off) still matches the spec exactly;
 * `applyProfile(null)` is the identity (spec purity);
 * each profile overrides the intended cells (T20 4,6→4 with IA reward preserved;
-  ODI 6,6→6, 2,2→1, 4,4→2; survival bonus raises the threshold);
+  ODI fours kept on 4,5/4,6, 6,6→6, IA 1,6→6, 2,2→1, 4,4→2; survival bonus
+  raises the threshold);
+* the boost layer fires **only** in Powerplay/Death (2,4→Four in T20 PP/Death but
+  Double in the middle; ODI dot-cells revive in the PP) and never touches IA hits;
+* the `avg == cap` tie resolves to the **total-strikes cap** dismissal;
 * 300 seeds across **both formats**: never >10 wickets, never over the per-format
   over cap (4 / 10), chase results classified correctly.
 
-Score distributions were tuned empirically over 400–500-seed sweeps (documented
+Score distributions were tuned empirically over 500–600-seed sweeps (documented
 means above), not eyeballed from a single match.

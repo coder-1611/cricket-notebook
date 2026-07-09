@@ -39,8 +39,8 @@ function init() {
   $("ausAvg").textContent = avgBat(T.Australia);
   renderLineups();
 
-  $("btnSim").onclick = runMatch;
-  $("btnRandom").onclick = () => { $("seed").value = Math.floor(Math.random() * 99999) + 1; runMatch(); };
+  $("btnSim").onclick = () => runMatch();
+  $("btnReplay").onclick = () => { if (state.match) runMatch(state.match.seed); };
   $("btnRules").onclick = showRules;
   $("stadium").onchange = updateStadiumTag;
   $("format").onchange = updateStadiumTag;
@@ -56,12 +56,12 @@ function init() {
 
   document.querySelectorAll(".tab").forEach(t => t.onclick = () => switchTab(t.dataset.tab));
 
-  // deep-link: ?seed=7&format=ODI&stadium=mumbai&auto=1  → replay a specific match
+  // hidden replay/testing deep-link: ?seed=7&format=ODI&stadium=mumbai&auto=1
   const q = new URLSearchParams(location.search);
-  if (q.get("seed")) $("seed").value = q.get("seed");
+  const linkSeed = q.get("seed") ? (parseInt(q.get("seed")) >>> 0) : null;
   if (q.get("format") && window.FORMATS[q.get("format")]) $("format").value = q.get("format");
   if (q.get("stadium") && window.STADIUMS.some(s => s.id === q.get("stadium"))) { $("stadium").value = q.get("stadium"); updateStadiumTag(); }
-  if (q.get("auto")) { runMatch(); if (q.get("to")) { const n = parseInt(q.get("to")); while (state.idx < Math.min(n, state.timeline.length - 1)) step(1); } if (q.get("tab")) switchTab(q.get("tab")); }
+  if (q.get("auto")) { runMatch(linkSeed); if (q.get("to")) { const n = parseInt(q.get("to")); while (state.idx < Math.min(n, state.timeline.length - 1)) step(1); } if (q.get("tab")) switchTab(q.get("tab")); }
 }
 
 function updateStadiumTag() {
@@ -83,10 +83,19 @@ function renderLineups() {
 }
 
 // ---------- run ----------
-function runMatch() {
+// Seed is never user-chosen: each simulate draws a fresh random seed.
+// (seedOverride powers Replay and the hidden ?seed= replay/testing deep-link.)
+function randomSeed() {
+  if (window.crypto && crypto.getRandomValues) {
+    return crypto.getRandomValues(new Uint32Array(1))[0] || 1;
+  }
+  return Math.floor(Math.random() * 0xFFFFFFFF) || 1;
+}
+
+function runMatch(seedOverride) {
   pause();
   const format = window.FORMATS[$("format").value] || window.FORMATS.T20;
-  const seed = parseInt($("seed").value) || 1;
+  const seed = (seedOverride != null) ? (seedOverride >>> 0) : randomSeed();
   const stadium = window.STADIUMS.find(x => x.id === $("stadium").value);
   const m = simulateMatch(T.India, T.Australia, { format, seed, stadium: stadium.name });
   state.match = m;
@@ -280,10 +289,10 @@ function showResult() {
   const r = state.match.result;
   const b = $("resultBanner");
   b.classList.remove("hidden");
-  if (r.type === "tie") { $("resultW").textContent = "🤝 Match Tied!"; $("resultM").textContent = "No super over — an honest tie."; }
+  if (r.type === "tie") { $("resultW").textContent = "🤝 Match Tied!"; $("resultM").textContent = `No super over — an honest tie. · Match #${state.match.seed}`; }
   else {
     $("resultW").innerHTML = `🏆 ${r.winner} win by ${r.margin}`;
-    $("resultM").textContent = r.type === "chase" ? "Chased it down." : "Defended the total.";
+    $("resultM").textContent = (r.type === "chase" ? "Chased it down." : "Defended the total.") + ` · Match #${state.match.seed}`;
   }
 }
 
@@ -341,7 +350,7 @@ function scorecardHtml(inn, other, prog) {
   const bat = prog.cards.map(c => {
     if (!c.batted) return `<tr><td class="name" style="color:var(--ink-3)">${escapeHtml(c.name)}</td><td class="how" colspan="6" style="text-align:right">did not bat</td></tr>`;
     let how;
-    if (c.out) how = c.outMethod === "cap" ? `out — rating cap (${c.ref.batting})` : `out — live avg vs ${escapeHtml(c.outBowler || "")}`;
+    if (c.out) how = c.outMethod === "cap" ? `out — ${c.strikes} total strikes (cap)` : `out — live avg vs ${escapeHtml(c.outBowler || "")}`;
     else how = `<span class="notout">not out</span>`;
     const duck = c.duck ? ` <span class="duck">🦆</span>` : "";
     return `<tr>

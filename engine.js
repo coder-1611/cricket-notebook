@@ -83,7 +83,9 @@ function dismissalInfo(battingRating, bowlingRating, accumulatedStrikes, bonus) 
   const cap = battingRating + bonus;
   const avg = Math.floor((battingRating + bowlingRating) / 2) + bonus;
   const threshold = Math.min(cap, avg);
-  const which = avg <= cap ? "average" : "cap";
+  // When the live average is NOT strictly below the cap, the batsman falls by
+  // reaching their TOTAL strike count (the rating cap) — surface that as "cap".
+  const which = avg < cap ? "average" : "cap";
   return { cap, avg, threshold, which, out: accumulatedStrikes >= threshold };
 }
 
@@ -101,23 +103,40 @@ var SCORING_PROFILES = {
     runs: {
       "4,6": { hi: 4 },              // two 4s (8) -> one 4 (4)
       "2,6": { hi: 1, lo: 1 },       // Double -> Single
+      "2,2": { hi: 1, lo: 1 },       // Double -> Single
       "1,6": { hi: 2, skipIA: true } // 4 runs -> Double (keep the IA two-sixes)
+    },
+    // Powerplay & Death: field up / slog — Doubles fly to the boundary.
+    boost: {
+      "2,4": { hi: 4, lo: 4 },       // Double -> FOUR
+      "1,6": { hi: 4, skipIA: true } // Double (base) -> FOUR (IA two-sixes intact)
     }
   },
   // ODI: heavier boundary damping (run rate ~6) + a survival bonus so a side
   // bats deep into the 50 overs rather than being bowled out early.
   ODI: {
-    thresholdBonus: 6,
+    thresholdBonus: 4,
     runs: {
-      "4,6": { hi: 2 },              // 8 -> 2
-      "4,4": { hi: 2, lo: 2 },       // 8 -> 2
-      "6,6": { hi: 6 },              // 12 -> 6 (one six)
-      "4,5": { hi: 2, lo: 2 },       // 4 -> 2
-      "1,6": { hi: 2, lo: 2, skipIA: true },
-      "2,6": { hi: 1, lo: 1 },       // Double -> Single
-      "2,4": { hi: 1, lo: 1 },       // Double -> Single
+      // Keep genuine FOURS in the game (4,5 stays 4; 4,6 -> one four) so an ODI
+      // has ~35 fours to ~10 sixes (a ~3.5:1 four:six ratio), then dot-trim the
+      // low rolls so the run rate settles near 6/over and the mean lands ~300.
+      "4,6": { hi: 4 },              // two 4s (8) -> one FOUR (4)
+      "4,4": { hi: 2, lo: 2 },       // two 4s (8) -> Double
+      "1,6": { hi: 2, iaHi: 6 },     // non-IA -> Double; IA two-sixes -> one SIX
+      "6,6": { hi: 6 },              // two sixes (12) -> one SIX
+      "2,6": { hi: 0, lo: 0 },       // Double -> Dot
+      "1,4": { hi: 0, lo: 0 },       // Single -> Dot
+      "1,3": { hi: 0, lo: 0 },       // Single -> Dot
+      "2,4": { hi: 0, lo: 0 },       // Double -> Dot
       "2,2": { hi: 1, lo: 1 },       // Double -> Single
       "1,2": { hi: 1, lo: 1, skipIA: true }
+    },
+    // Powerplay & Death: the dot-trimmed low rolls come alive again.
+    boost: {
+      "2,4": { hi: 2, lo: 2 },       // Dot (base) -> Double
+      "2,6": { hi: 2, lo: 2 },       // Dot (base) -> Double
+      "1,4": { hi: 1, lo: 1 },       // Dot (base) -> Single
+      "4,4": { hi: 4, lo: 4 }        // Double (base) -> FOUR
     }
   }
 };
@@ -135,20 +154,36 @@ function labelFor(runs, strikes) {
   return "Dot";
 }
 
+// resolve a single run-override cell honouring iaHi / skipIA / branch
+function overrideRuns(ro, high, ia) {
+  if (!ro) return null;
+  if (high && ia && ro.iaHi != null) return ro.iaHi;
+  if (ro.skipIA && high && ia) return null;
+  return high ? ro.hi : ro.lo;
+}
+
 // Apply a format profile to a base (spec) outcome. Returns the base unchanged if
-// no override touches this cell, so commentary labels stay faithful.
-function applyProfile(base, pair, high, ia, profile) {
+// no override touches this cell, so commentary labels stay faithful. In the
+// Powerplay and Death phases the profile's `boost` table is applied on top of the
+// base overrides — batsmen attack the new ball and slog at the death.
+function applyProfile(base, pair, high, ia, profile, phase) {
   if (!profile) return base;
   const lo = Math.min(pair[0], pair[1]), hi = Math.max(pair[0], pair[1]);
   const key = lo + "," + hi;
   let runs = base.runs, strikes = base.strikes, changed = false;
-  const ro = profile.runs && profile.runs[key];
-  if (ro && !(ro.skipIA && high && ia) && base.runs > 0) {
-    const nv = high ? ro.hi : ro.lo;
-    if (nv != null && nv !== runs) { runs = nv; changed = true; }
+
+  const nv = overrideRuns(profile.runs && profile.runs[key], high, ia);
+  if (nv != null && base.runs > 0 && nv !== runs) { runs = nv; changed = true; }
+
+  const boosting = (phase === "Powerplay" || phase === "Death");
+  if (boosting && profile.boost) {
+    const bv = overrideRuns(profile.boost[key], high, ia);
+    if (bv != null && bv !== runs) { runs = bv; changed = true; }
   }
+
   const so = profile.strikes && profile.strikes[key];
-  if (so) { const nv = high ? so.hi : so.lo; if (nv != null && nv !== strikes) { strikes = nv; changed = true; } }
+  if (so) { const sv = high ? so.hi : so.lo; if (sv != null && sv !== strikes) { strikes = sv; changed = true; } }
+
   if (!changed) return base;
   return { runs, strikes, label: labelFor(runs, strikes), big: runs >= 4, iaApplied: base.iaApplied, branch: base.branch };
 }
@@ -240,6 +275,7 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
   for (let over = 0; over < totalOvers && !ended; over++) {
     const bowlerIdx = plan[over];
     const bowlingRating = fieldingTeam.lineup[bowlerIdx].bowling;
+    const phaseName = phaseFor(over + 1, format).name;
     let overRuns = 0, overWk = 0;
 
     // Live-average walk-off check when a new bowler comes on (no ball needed):
@@ -278,7 +314,7 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
       const bstat = bowlerStats[bowlerIdx];
       const d1 = rollDie(rng), d2 = rollDie(rng);
       const res = applyProfile(resolveBall([d1, d2], striker.battingRating, striker.ia),
-        [d1, d2], striker.battingRating > 5, striker.ia, profile);
+        [d1, d2], striker.battingRating > 5, striker.ia, profile, phaseName);
 
       // apply runs
       striker.runs += res.runs; striker.balls++;
@@ -311,7 +347,7 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
         inningNo, over: over + 1, ballInOver: bib + 1, striker: striker.name,
         bowler: fieldingTeam.lineup[bowlerIdx].name, bowlerRating: bowlingRating,
         bowlerType: fieldingTeam.lineup[bowlerIdx].type || "pace",
-        phase: phaseFor(over + 1, format).name,
+        phase: phaseName,
         pair: [d1, d2], iaApplied: res.iaApplied,
         branch: res.branch, label: res.label, runs: res.runs, strikes: res.strikes,
         totalStrikes: striker.strikes, capThreshold: di.cap, avgThreshold: di.avg, threshold: di.threshold,
@@ -367,7 +403,7 @@ function makeCommentary(res, striker, di, wicket, pair) {
   const who = striker.name;
   if (wicket) {
     const how = di.which === "cap"
-      ? `reaches the rating cap of ${di.cap}`
+      ? `reaches ${striker.strikes} TOTAL strikes — the rating cap`
       : `crosses the live average of ${di.avg} vs this bowler`;
     return `${dice} OUT! ${who} ${how}. ${striker.runs === 0 ? "Gone for a DUCK." : `Departs for ${striker.runs}.`}`;
   }

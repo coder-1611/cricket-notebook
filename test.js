@@ -57,6 +57,10 @@ eq(e.dismissalInfo(7, 1, 0).which, "average", "7v1 average bites");
 eq(e.dismissalInfo(7, 10, 0).threshold, 7, "7-bat vs 10-bowl -> 7 (cap)");
 eq(e.dismissalInfo(7, 10, 0).which, "cap", "7v10 cap bites");
 eq(e.dismissalInfo(7, 7, 0).threshold, 7, "7-bat vs 7-bowl -> 7");
+// avg == cap ties resolve to the total-strikes cap (so a top batsman vs a weak
+// bowler falls "by total strikes", which the player can actually see)
+eq(e.dismissalInfo(10, 10, 0).which, "cap", "10-bat vs 10-bowl -> total-strikes cap");
+eq(e.dismissalInfo(7, 7, 0).which, "cap", "7v7 tie -> total-strikes cap");
 
 // ---- Base table must ignore profile === null (spec purity) ----
 eq(e.applyProfile(e.resolveBall([4, 6], 8, false), [4, 6], true, false, null),
@@ -68,11 +72,25 @@ const prof = (base, pair, high, ia, key) => e.applyProfile(base, pair, high, ia,
 // T20: 4,6 >5 two-4s(8) -> 4 ; 1,6 >5 IA reward preserved (12)
 eq(prof(e.resolveBall([4, 6], 8, false), [4, 6], true, false, "T20").runs, 4, "T20 4,6>5 -> 4 runs");
 eq(prof(e.resolveBall([1, 6], 8, true), [1, 6], true, true, "T20").runs, 12, "T20 1,6>5 IA reward preserved");
-// ODI: 6,6 >5 12 -> 6 ; 2,2 -> 1 ; 4,4 -> 2 ; survival bonus raises threshold
+// ODI: 6,6 >5 12 -> 6 ; 2,2 -> 1 ; 4,4 -> 2 ; fours survive (4,5 / 4,6) ; survival bonus raises threshold
 eq(prof(e.resolveBall([6, 6], 8, false), [6, 6], true, false, "ODI").runs, 6, "ODI 6,6>5 -> 6 runs");
 eq(prof(e.resolveBall([2, 2], 8, false), [2, 2], true, false, "ODI").runs, 1, "ODI 2,2 -> 1 run");
 eq(prof(e.resolveBall([4, 4], 3, false), [4, 4], false, false, "ODI").runs, 2, "ODI 4,4 -> 2 runs");
-eq(e.dismissalInfo(7, 7, 0, 6).threshold, 13, "ODI survival bonus +6 on threshold");
+eq(prof(e.resolveBall([4, 6], 8, false), [4, 6], true, false, "ODI").runs, 4, "ODI 4,6>5 -> FOUR kept");
+eq(prof(e.resolveBall([4, 5], 8, false), [4, 5], true, false, "ODI").runs, 4, "ODI 4,5 -> FOUR untouched");
+eq(prof(e.resolveBall([1, 6], 8, true), [1, 6], true, true, "ODI").runs, 6, "ODI 1,6 IA -> one SIX (iaHi)");
+eq(e.dismissalInfo(7, 7, 0, 4).threshold, 11, "ODI survival bonus +4 on threshold");
+
+// ---- Powerplay/Death boost layer ----
+const bprof = (pair, r, ia, key, phase) =>
+  e.applyProfile(e.resolveBall(pair, r, ia), pair, r > 5, ia, e.SCORING_PROFILES[key], phase);
+eq(bprof([2, 4], 8, false, "T20", "Powerplay").runs, 4, "T20 PP boost: 2,4 -> FOUR");
+eq(bprof([2, 4], 8, false, "T20", "Death").runs, 4, "T20 Death boost: 2,4 -> FOUR");
+eq(bprof([2, 4], 8, false, "T20", "Middle").runs, 2, "T20 Middle: 2,4 stays Double");
+eq(bprof([2, 6], 8, false, "ODI", "Middle").runs, 0, "ODI Middle: 2,6 dot-trimmed");
+eq(bprof([2, 6], 8, false, "ODI", "Powerplay").runs, 2, "ODI PP boost: 2,6 -> Double");
+eq(bprof([4, 4], 8, false, "ODI", "Death").runs, 4, "ODI Death boost: 4,4 -> FOUR");
+eq(bprof([1, 6], 8, true, "T20", "Powerplay").runs, 12, "T20 PP: IA two-sixes never dampened");
 
 // ---- Match integrity across seeds & formats ----
 let seedsChecked = 0, ties = 0;
