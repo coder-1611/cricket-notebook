@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<template id="__bundler_thumbnail" data-bg-color="#F3EDDF">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#F3EDDF"></rect>
+    <circle cx="600" cy="360" r="130" fill="#C43D0C"></circle>
+    <path d="M600 230 A130 130 0 0 1 600 490" fill="none" stroke="#FFF4E8" stroke-width="8" stroke-dasharray="18 14"></path>
+    <text x="600" y="600" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="900" fill="#211C13" letter-spacing="6">CRICKET NOTEBOOK</text>
+  </svg>
+</template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#F3EDDF;color:#211C13;font-family:'Archivo',system-ui,sans-serif;}
+  a{color:#C43D0C;text-decoration:none;}
+  a:hover{color:#8F2C08;text-decoration:underline;}
+  ::selection{background:#C43D0C;color:#FFFDF6;}
+  @keyframes cn-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#F3EDDF;background-image:linear-gradient(rgba(33,28,19,0.045) 1px, transparent 1px);background-size:100% 56px;padding:0 24px 80px">
+<div style="max-width:1200px;margin:0 auto">
+
+  <!-- ============ HEADER ============ -->
+  <header data-screen-label="Header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:34px 0 22px;border-bottom:3px solid #211C13">
+    <div style="display:flex;align-items:center;gap:18px">
+      <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 32% 28%, #E85A24, #B22F07 68%);box-shadow:inset -6px -8px 14px rgba(60,10,0,.45), 0 2px 6px rgba(33,28,19,.25);position:relative;overflow:hidden;flex:none">
+        <div style="position:absolute;left:50%;top:-6px;bottom:-6px;width:0;border-left:2px dashed rgba(255,246,230,.8);transform:rotate(18deg)"></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="font-family:'Archivo';font-weight:900;font-stretch:70%;font-size:40px;line-height:1;letter-spacing:-0.5px;text-transform:uppercase">Cricket</span>
+          <span style="font-family:'Newsreader',serif;font-style:italic;font-weight:500;font-size:40px;line-height:1;color:#C43D0C">Notebook</span>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2.5px;color:#7C7160;margin-top:7px">TWO-PLAYER DICE CRICKET &middot; T20 &amp; ODI</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border:1px solid #211C13;border-radius:999px;background:#FFFDF6;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.5px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#C43D0C;flex:none;animation:cn-pulse 2.2s infinite"></span>
+      <span style="font-weight:600">Wankhede Stadium, Mumbai</span>
+      <span style="color:#B4A88F">&middot;</span>
+      <span style="color:#7C7160">ODI &middot; 50 overs</span>
+    </div>
+  </header>
+
+  <!-- ============ BODY GRID ============ -->
+  <div style="display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start;margin-top:22px">
+
+    <!-- ============ SETUP RAIL ============ -->
+    <aside id="setup-panel" data-screen-label="Match Setup" style="flex:1 1 280px;max-width:330px;min-width:270px;display:flex;flex-direction:column;gap:0;background:#FFFDF6;border:1px solid #211C13;border-radius:14px;overflow:hidden;box-shadow:4px 4px 0 rgba(33,28,19,.12)">
+      <div style="padding:14px 20px;background:#211C13;color:#F3EDDF;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2.5px">MATCH SETUP</div>
+
+      <div style="padding:20px;display:flex;flex-direction:column;gap:18px">
+        <!-- matchup -->
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px">
+          <div style="text-align:center">
+            <div style="display:inline-flex;align-items:center;gap:6px;font-family:'Archivo';font-weight:900;font-stretch:75%;font-size:21px;text-transform:uppercase"><span style="width:9px;height:9px;border-radius:2px;background:#1849C6;flex:none"></span>India</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#7C7160;margin-top:4px">BAT 6.8 &middot; BOWL 6.1</div>
+          </div>
+          <div style="font-family:'Newsreader',serif;font-style:italic;font-size:16px;color:#C43D0C">vs</div>
+          <div style="text-align:center">
+            <div style="display:inline-flex;align-items:center;gap:6px;font-family:'Archivo';font-weight:900;font-stretch:75%;font-size:21px;text-transform:uppercase">Australia<span style="width:9px;height:9px;border-radius:2px;background:#D99000;flex:none"></span></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#7C7160;margin-top:4px">BAT 6.9 &middot; BOWL 6.5</div>
+          </div>
+        </div>
+
+        <div style="height:1px;background:#E4DBC6"></div>
+
+        <!-- stadium -->
+        <label style="display:flex;flex-direction:column;gap:7px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2px;color:#7C7160">STADIUM</span>
+          <select id="stadium-select" class="cn-select" style="font-family:'Archivo';font-weight:600;font-size:14px;color:#211C13;background:#F3EDDF;border:1px solid #211C13;border-radius:10px;padding:11px 12px;width:100%">
+            <option>Wankhede Stadium — Mumbai</option>
+            <option>MCG — Melbourne</option>
+            <option>Eden Gardens — Kolkata</option>
+            <option>Lord's — London</option>
+          </select>
+        </label>
+
+        <!-- format -->
+        <label style="display:flex;flex-direction:column;gap:7px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2px;color:#7C7160">FORMAT</span>
+          <select id="format-select" class="cn-select" style="font-family:'Archivo';font-weight:600;font-size:14px;color:#211C13;background:#F3EDDF;border:1px solid #211C13;border-radius:10px;padding:11px 12px;width:100%">
+            <option>ODI — 50 overs</option>
+            <option>T20 — 20 overs</option>
+          </select>
+        </label>
+
+        <!-- actions -->
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button id="simulate-btn" style="cursor:pointer;border:1px solid #211C13;border-radius:12px;background:#C43D0C;color:#FFF4E8;font-family:'Archivo';font-weight:900;font-stretch:80%;font-size:17px;letter-spacing:1px;text-transform:uppercase;padding:15px 12px;box-shadow:3px 3px 0 #211C13" style-hover="background:#A93206;transform:translate(1px,1px);box-shadow:2px 2px 0 #211C13" style-active="transform:translate(3px,3px);box-shadow:0 0 0 #211C13">&#9654;&#65038; Simulate Match</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <button id="rules-btn" onClick="{{ openRules }}" style="cursor:pointer;border:1px solid #211C13;border-radius:10px;background:#FFFDF6;color:#211C13;font-family:'Archivo';font-weight:700;font-size:13px;padding:11px 8px" style-hover="background:#211C13;color:#F3EDDF">Rules</button>
+            <button id="replay-btn" style="cursor:pointer;border:1px solid #211C13;border-radius:10px;background:#FFFDF6;color:#211C13;font-family:'Archivo';font-weight:700;font-size:13px;padding:11px 8px" style-hover="background:#211C13;color:#F3EDDF">Replay</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- lineups -->
+      <div style="border-top:1px solid #E4DBC6">
+        <button id="lineups-toggle" onClick="{{ toggleLineups }}" style="cursor:pointer;width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;padding:14px 20px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:#7C7160" style-hover="color:#C43D0C">
+          <span>TEAM LINEUPS</span><span>{{ lineupsChevron }}</span>
+        </button>
+        <sc-if value="{{ lineupsOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:0 20px 20px;display:flex;flex-direction:column;gap:16px">
+            <div>
+              <div style="display:flex;align-items:center;gap:7px;font-family:'Archivo';font-weight:900;font-stretch:75%;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#1849C6;margin-bottom:8px"><span style="width:7px;height:7px;border-radius:2px;background:#1849C6"></span>India</div>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ indiaLineup }}" as="p" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dotted #E4DBC6;font-size:12.5px">
+                    <span style="font-weight:600;flex:1;display:flex;align-items:center;gap:6px">{{ p.name }}<sc-if value="{{ p.ia }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1px;background:#D99000;color:#211C13;border-radius:4px;padding:2px 5px">IA</span></sc-if></span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7C7160">bat {{ p.bat }} &middot; bwl {{ p.bowl }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;align-items:center;gap:7px;font-family:'Archivo';font-weight:900;font-stretch:75%;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#A67200;margin-bottom:8px"><span style="width:7px;height:7px;border-radius:2px;background:#D99000"></span>Australia</div>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ ausLineup }}" as="p" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dotted #E4DBC6;font-size:12.5px">
+                    <span style="font-weight:600;flex:1;display:flex;align-items:center;gap:6px">{{ p.name }}<sc-if value="{{ p.ia }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1px;background:#D99000;color:#211C13;border-radius:4px;padding:2px 5px">IA</span></sc-if></span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7C7160">bat {{ p.bat }} &middot; bwl {{ p.bowl }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+
+    <!-- ============ MAIN COLUMN ============ -->
+    <main style="flex:1 1 620px;min-width:0;display:flex;flex-direction:column;gap:20px">
+
+      <!-- ============ LIVE SCOREBOARD ============ -->
+      <section id="scoreboard" data-screen-label="Live Scoreboard" style="background:#211C13;border-radius:16px;overflow:hidden;box-shadow:6px 6px 0 rgba(33,28,19,.15)">
+        <div style="display:grid;grid-template-columns:1fr 1fr">
+          <div style="padding:24px 28px;border-right:1px solid rgba(243,237,223,.14);position:relative">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#D99000"></div>
+            <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:2.5px;color:#D99000">AUSTRALIA <span style="font-size:10px;color:rgba(243,237,223,.45);letter-spacing:1px">1ST INN</span></div>
+            <div style="font-family:'Archivo';font-weight:900;font-stretch:66%;font-size:66px;line-height:1;color:#F3EDDF;margin-top:8px">352<span style="color:rgba(243,237,223,.45)">/</span>7</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:rgba(243,237,223,.55);margin-top:8px">50.0 overs &middot; RR 7.04</div>
+          </div>
+          <div style="padding:24px 28px;position:relative;background:rgba(255,253,246,.045)">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#3D6BE8"></div>
+            <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:2.5px;color:#8FA9F2">INDIA
+              <span style="display:inline-flex;align-items:center;gap:5px;background:#C43D0C;color:#FFF4E8;font-size:9.5px;letter-spacing:1.5px;border-radius:4px;padding:3px 7px"><span style="width:5px;height:5px;border-radius:50%;background:#FFF4E8;animation:cn-pulse 1.6s infinite"></span>BATTING</span>
+            </div>
+            <div style="font-family:'Archivo';font-weight:900;font-stretch:66%;font-size:66px;line-height:1;color:#FFFDF6;margin-top:8px">353<span style="color:rgba(243,237,223,.45)">/</span>9</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:rgba(243,237,223,.55);margin-top:8px">50.0 overs &middot; RR 7.06</div>
+          </div>
+        </div>
+        <div id="chase-strip" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 28px;background:#C43D0C;color:#FFF4E8;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.5px">
+          <span style="font-weight:600;letter-spacing:2px">CHASE</span>
+          <span style="opacity:.6">&#124;</span>
+          <span>Target <b>353</b> &middot; India got there with <b>0 balls</b> to spare &middot; won by <b>1 wicket</b></span>
+        </div>
+      </section>
+
+      <!-- ============ AT THE CREASE ============ -->
+      <section id="crease" data-screen-label="At the Crease" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <!-- striker -->
+          <div class="batsman-card" style="background:#211C13;color:#F3EDDF;border:1px solid #211C13;border-radius:14px;padding:18px 20px;position:relative;box-shadow:4px 4px 0 rgba(196,61,12,.55)">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="font-family:'Archivo';font-weight:900;font-stretch:75%;font-size:19px;text-transform:uppercase;letter-spacing:.5px">Zaheer Khan</div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:1.5px;background:#C43D0C;color:#FFF4E8;border-radius:4px;padding:3px 8px;flex:none">ON STRIKE</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-top:10px">
+              <span style="font-family:'Archivo';font-weight:900;font-stretch:66%;font-size:44px;line-height:1">29</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:rgba(243,237,223,.55)">28 balls</span>
+            </div>
+            <div style="margin-top:14px">
+              <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.5px;color:rgba(243,237,223,.55);margin-bottom:6px"><span>PRESSURE</span><span style="color:#F0A886">strikes 6/7</span></div>
+              <div style="height:7px;border-radius:99px;background:rgba(243,237,223,.14);overflow:hidden"><div style="width:86%;height:100%;border-radius:99px;background:linear-gradient(90deg,#3E7A46,#D99000 55%,#C43D0C)"></div></div>
+            </div>
+          </div>
+          <!-- non-striker -->
+          <div class="batsman-card" style="background:#FFFDF6;border:1px solid #211C13;border-radius:14px;padding:18px 20px;box-shadow:4px 4px 0 rgba(33,28,19,.1)">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="font-family:'Archivo';font-weight:900;font-stretch:75%;font-size:19px;text-transform:uppercase;letter-spacing:.5px">Jasprit Bumrah</div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1px;background:#D99000;color:#211C13;border-radius:4px;padding:2px 6px;flex:none">IA</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-top:10px">
+              <span style="font-family:'Archivo';font-weight:900;font-stretch:66%;font-size:44px;line-height:1">7</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7C7160">8 balls</span>
+            </div>
+            <div style="margin-top:14px">
+              <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.5px;color:#7C7160;margin-bottom:6px"><span>PRESSURE</span><span>strikes 1/6</span></div>
+              <div style="height:7px;border-radius:99px;background:#EDE5D2;overflow:hidden"><div style="width:17%;height:100%;border-radius:99px;background:linear-gradient(90deg,#3E7A46,#7BA33F)"></div></div>
+            </div>
+          </div>
+        </div>
+        <!-- bowler line -->
+        <div id="bowler-line" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#FFFDF6;border:1px solid #211C13;border-radius:12px;padding:11px 18px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2px;color:#7C7160">BOWLING</span>
+          <span style="font-family:'Archivo';font-weight:900;font-stretch:75%;font-size:16px;text-transform:uppercase">Matthew Hayden</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#7C7160">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="flex:none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" fill="#C43D0C"></path></svg>
+            pace &middot; rating 10
+          </span>
+          <span style="flex:1"></span>
+          <sc-if value="{{ isPowerplay }}" hint-placeholder-val="{{ false }}"><span class="phase-chip" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;border-radius:999px;padding:5px 13px;background:#1849C6;color:#EFF3FE">POWERPLAY</span></sc-if>
+          <sc-if value="{{ isMiddle }}" hint-placeholder-val="{{ false }}"><span class="phase-chip" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;border-radius:999px;padding:5px 13px;background:#3E7A46;color:#EFF6EE">MIDDLE</span></sc-if>
+          <sc-if value="{{ isDeath }}" hint-placeholder-val="{{ true }}"><span class="phase-chip" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;border-radius:999px;padding:5px 13px;background:#211C13;color:#F0A886">DEATH</span></sc-if>
+        </div>
+      </section>
+
+      <!-- ============ LAST BALL ============ -->
+      <section id="last-ball" data-screen-label="Last Ball" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:#FFFDF6;border:1px solid #211C13;border-radius:14px;padding:16px 20px;box-shadow:4px 4px 0 rgba(33,28,19,.1)">
+        <div style="display:flex;gap:8px;flex:none">
+          <div class="die" style="width:46px;height:46px;border-radius:10px;background:#211C13;position:relative;box-shadow:inset 0 -4px 0 rgba(0,0,0,.45), 2px 2px 0 rgba(33,28,19,.2)">
+            <span style="position:absolute;width:8px;height:8px;border-radius:50%;background:#F3EDDF;left:9px;top:9px"></span>
+            <span style="position:absolute;width:8px;height:8px;border-radius:50%;background:#F3EDDF;right:9px;top:9px"></span>
+            <span style="position:absolute;width:8px;height:8px;border-radius:50%;background:#F3EDDF;left:9px;bottom:9px"></span>
+            <span style="position:absolute;width:8px;height:8px;border-radius:50%;background:#F3EDDF;right:9px;bottom:9px"></span>
+          </div>
+          <div class="die" style="width:46px;height:46px;border-radius:10px;background:#FFFDF6;border:1.5px solid #211C13;position:relative;box-shadow:2px 2px 0 rgba(33,28,19,.2)">
+            <span style="position:absolute;width:9px;height:9px;border-radius:50%;background:#C43D0C;left:50%;top:50%;transform:translate(-50%,-50%)"></span>
+          </div>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <span style="font-family:'Archivo';font-weight:900;font-stretch:70%;font-size:24px;text-transform:uppercase;letter-spacing:.5px">Single</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7C7160">[4&ndash;1]</span>
+          </div>
+          <div style="font-family:'Newsreader',serif;font-style:italic;font-size:16.5px;color:#4E4636;margin-top:3px">Quick single &mdash; Bumrah scampers through, and India have chased it down!</div>
+        </div>
+        <span id="result-pill" style="flex:none;font-family:'Archivo';font-weight:900;font-stretch:75%;font-size:18px;background:#F3EDDF;border:1.5px solid #211C13;border-radius:999px;min-width:46px;text-align:center;padding:8px 14px">1</span>
+      </section>
+
+      <!-- ============ PLAYBACK ============ -->
+      <section id="playback" data-screen-label="Playback Controls" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#211C13;border-radius:14px;padding:12px 18px">
+        <button id="step-back-btn" title="Step back" style="cursor:pointer;width:42px;height:42px;border-radius:10px;border:1px solid rgba(243,237,223,.25);background:none;color:#F3EDDF;font-size:15px;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(243,237,223,.12)">&#9198;&#65038;</button>
+        <button id="play-btn" title="Play / pause" style="cursor:pointer;height:42px;border-radius:10px;border:1px solid #C43D0C;background:#C43D0C;color:#FFF4E8;font-family:'Archivo';font-weight:900;font-stretch:80%;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;padding:0 22px;display:flex;align-items:center;gap:8px" style-hover="background:#A93206">&#9654;&#65038; Play</button>
+        <button id="step-fwd-btn" title="Step forward" style="cursor:pointer;width:42px;height:42px;border-radius:10px;border:1px solid rgba(243,237,223,.25);background:none;color:#F3EDDF;font-size:15px;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(243,237,223,.12)">&#9197;&#65038;</button>
+        <button id="skip-innings-btn" style="cursor:pointer;height:42px;border-radius:10px;border:1px solid rgba(243,237,223,.25);background:none;color:#F3EDDF;font-family:'Archivo';font-weight:700;font-size:13px;padding:0 16px;display:flex;align-items:center;gap:8px" style-hover="background:rgba(243,237,223,.12)">&#9197;&#65038;&#9197;&#65038; Skip innings</button>
+        <span style="flex:1"></span>
+        <label style="display:flex;align-items:center;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2px;color:rgba(243,237,223,.55)">SPEED
+          <input id="speed-slider" type="range" min="1" max="10" defaultValue="6" style="width:130px;accent-color:#C43D0C">
+        </label>
+      </section>
+
+      <!-- ============ RESULT BANNER ============ -->
+      <sc-if value="{{ showResultBanner }}" hint-placeholder-val="{{ true }}">
+        <section id="result-banner" data-screen-label="Result Banner" style="position:relative;overflow:hidden;background:#C43D0C;border-radius:16px;padding:26px 30px;color:#FFF4E8;box-shadow:6px 6px 0 rgba(33,28,19,.18)">
+          <div style="position:absolute;right:-30px;top:-46px;font-family:'Archivo';font-weight:900;font-stretch:62%;font-size:170px;line-height:1;color:rgba(255,244,232,.12);pointer-events:none;user-select:none">WIN</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:3px;color:rgba(255,244,232,.75)">MATCH #11 &middot; RESULT</div>
+          <div style="font-family:'Archivo';font-weight:900;font-stretch:68%;font-size:38px;line-height:1.05;text-transform:uppercase;margin-top:8px">India win by 1 wicket</div>
+          <div style="font-family:'Newsreader',serif;font-style:italic;font-size:17px;color:rgba(255,244,232,.9);margin-top:6px">Chased it down off the very last ball.</div>
+        </section>
+      </sc-if>
+
+      <!-- ============ TABS ============ -->
+      <section data-screen-label="Tabs" style="display:flex;flex-direction:column;gap:0">
+        <div id="tab-bar" role="tablist" style="display:flex;gap:8px;flex-wrap:wrap;border-bottom:3px solid #211C13;padding-bottom:0">
+          <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="4">
+            <button id="{{ tab.domId }}" class="cn-tab" role="tab" onClick="{{ tab.select }}" style="{{ tab.style }}">{{ tab.label }}</button>
+          </sc-for>
+        </div>
+
+        <!-- ==== COMMENTARY PANEL ==== -->
+        <sc-if value="{{ showCommentary }}" hint-placeholder-val="{{ true }}">
+          <div id="panel-commentary" data-screen-label="Commentary Panel" style="background:#FFFDF6;border:1px solid #211C13;border-top:none;border-radius:0 0 14px 14px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 22px;border-bottom:1px solid #E4DBC6">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2.5px;color:#7C7160">BALL-BY-BALL</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#B4A88F">600 balls</span>
+            </div>
+            <div style="max-height:480px;overflow-y:auto;display:flex;flex-direction:column">
+              <sc-for list="{{ feed }}" as="ball" hint-placeholder-count="8">
+                <div style="{{ ball.rowStyle }}">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7C7160;width:38px;flex:none">{{ ball.ov }}</span>
+                  <span style="{{ ball.badgeStyle }}">{{ ball.badge }}</span>
+                  <span style="{{ ball.textStyle }}">{{ ball.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ==== RUN WORM PANEL ==== -->
+        <sc-if value="{{ showWorm }}" hint-placeholder-val="{{ false }}">
+          <div id="panel-worm" data-screen-label="Run Worm Panel" style="background:#FFFDF6;border:1px solid #211C13;border-top:none;border-radius:0 0 14px 14px;padding:20px 22px">
+            <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#4E4636;margin-bottom:16px">
+              <span style="font-size:11px;letter-spacing:2.5px;color:#7C7160">CUMULATIVE SCORE BY OVER</span>
+              <span style="flex:1"></span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#D99000;border-radius:2px"></span>Australia (1st) &mdash; 352/7</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#3D6BE8;border-radius:2px"></span>India (2nd) &mdash; 353/9</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#C43D0C"></span>wicket</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:0;border-top:2px dashed #7C7160"></span>target 353</span>
+            </div>
+            <svg viewBox="-45 0 1105 420" style="width:100%;height:auto;display:block">
+              <line x1="20" y1="380" x2="1020" y2="380" stroke="#E4DBC6" stroke-width="1"></line>
+              <line x1="20" y1="295" x2="1020" y2="295" stroke="#EDE5D2" stroke-width="1"></line>
+              <line x1="20" y1="209" x2="1020" y2="209" stroke="#EDE5D2" stroke-width="1"></line>
+              <line x1="20" y1="124" x2="1020" y2="124" stroke="#EDE5D2" stroke-width="1"></line>
+              <line x1="20" y1="38" x2="1020" y2="38" stroke="#EDE5D2" stroke-width="1"></line>
+              <text x="8" y="384" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="end">0</text>
+              <text x="8" y="299" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="end">90</text>
+              <text x="8" y="213" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="end">180</text>
+              <text x="8" y="128" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="end">270</text>
+              <text x="8" y="42" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="end">360</text>
+              <text x="20" y="402" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F">0</text>
+              <text x="220" y="402" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="middle">10</text>
+              <text x="420" y="402" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="middle">20</text>
+              <text x="620" y="402" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="middle">30</text>
+              <text x="820" y="402" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="middle">40</text>
+              <text x="1020" y="402" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="middle">50</text>
+              <line x1="20" y1="45" x2="1020" y2="45" stroke="#7C7160" stroke-width="2" stroke-dasharray="7 6" opacity="0.7"></line>
+              <text x="1016" y="34" font-family="IBM Plex Mono" font-size="11" fill="#7C7160" text-anchor="end">target 353</text>
+              <polyline points="20,380 120,344 220,303 320,274 420,246 520,211 620,177 720,149 820,122 920,90 1020,46" fill="none" stroke="#D99000" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+              <polyline points="20,380 120,357 220,331 320,306 420,286 520,252 620,209 720,169 820,127 920,85 1020,45" fill="none" stroke="#3D6BE8" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+              <g fill="#C43D0C" stroke="#FFFDF6" stroke-width="2">
+                <circle cx="303" cy="276" r="5.5"></circle><circle cx="326" cy="270" r="5.5"></circle><circle cx="537" cy="201" r="5.5"></circle><circle cx="677" cy="154" r="5.5"></circle><circle cx="793" cy="136" r="5.5"></circle><circle cx="940" cy="69" r="5.5"></circle><circle cx="1007" cy="53" r="5.5"></circle>
+              </g>
+              <g fill="#C43D0C" stroke="#211C13" stroke-width="2">
+                <circle cx="87" cy="366" r="5.5"></circle><circle cx="303" cy="310" r="5.5"></circle><circle cx="410" cy="289" r="5.5"></circle><circle cx="673" cy="189" r="5.5"></circle><circle cx="803" cy="134" r="5.5"></circle><circle cx="897" cy="93" r="5.5"></circle><circle cx="927" cy="81" r="5.5"></circle><circle cx="942" cy="80" r="5.5"></circle><circle cx="990" cy="53" r="5.5"></circle>
+              </g>
+            </svg>
+          </div>
+        </sc-if>
+
+        <!-- ==== 1ST INNINGS CARD ==== -->
+        <sc-if value="{{ showCard1 }}" hint-placeholder-val="{{ false }}">
+          <div id="panel-innings1" data-screen-label="1st Innings Card" style="background:#FFFDF6;border:1px solid #211C13;border-top:none;border-radius:0 0 14px 14px;padding:22px">
+            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+              <span style="display:inline-flex;align-items:center;gap:8px;font-family:'Archivo';font-weight:900;font-stretch:70%;font-size:24px;text-transform:uppercase"><span style="width:10px;height:10px;border-radius:2px;background:#D99000"></span>Australia</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#7C7160">352/7 (50.0 ov) &middot; RR 7.04</span>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(180px,1fr) 44px 44px 62px 40px 40px 56px;gap:0 8px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.5px;color:#7C7160;padding:8px 12px;border-bottom:2px solid #211C13">
+              <span>BATSMAN</span><span style="text-align:right">R</span><span style="text-align:right">B</span><span style="text-align:right">STRK</span><span style="text-align:right">4s</span><span style="text-align:right">6s</span><span style="text-align:right">SR</span>
+            </div>
+            <sc-for list="{{ inn1Bat }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:minmax(180px,1fr) 44px 44px 62px 40px 40px 56px;gap:0 8px;align-items:center;padding:9px 12px;border-bottom:1px dotted #E4DBC6">
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px">{{ r.name }}<sc-if value="{{ r.ia }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1px;background:#D99000;color:#211C13;border-radius:4px;padding:1px 5px">IA</span></sc-if><sc-if value="{{ r.duck }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px">&#129414;</span></sc-if></div>
+                  <div style="{{ r.outStyle }}">{{ r.out }}</div>
+                </div>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px">{{ r.r }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.b }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.strk }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.f4 }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.f6 }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px">{{ r.sr }}</span>
+              </div>
+            </sc-for>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:#211C13;color:#F3EDDF;border-radius:10px;padding:13px 18px;margin-top:14px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2.5px;color:rgba(243,237,223,.6)">TOTAL &middot; 7 WKTS &middot; 50.0 OV &middot; EXTRAS 0</span>
+              <span style="font-family:'Archivo';font-weight:900;font-stretch:66%;font-size:30px;line-height:1">352/7</span>
+            </div>
+            <div style="font-family:'Newsreader',serif;font-size:14px;color:#4E4636;line-height:1.6;margin-top:12px"><b style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.5px;color:#7C7160">FALL OF WICKETS&nbsp;&nbsp;</b>110&ndash;1 (Hayden, 14.1) &middot; 116&ndash;2 (Warner, 15.2) &middot; 188&ndash;3 (Ponting, 25.5) &middot; 238&ndash;4 (Bradman, 32.5) &middot; 257&ndash;5 (Smith, 38.4) &middot; 327&ndash;6 (Gilchrist, 46.0) &middot; 344&ndash;7 (Warne, 49.2)</div>
+            <div style="height:1px;background:#E4DBC6;margin:18px 0"></div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px"><span style="font-family:'Archivo';font-weight:900;font-stretch:70%;font-size:18px;text-transform:uppercase">Bowling</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7C7160">India</span></div>
+            <div style="display:grid;grid-template-columns:minmax(160px,1fr) 56px 52px 44px 56px 60px;gap:0 8px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.5px;color:#7C7160;padding:8px 12px;border-bottom:2px solid #211C13">
+              <span>BOWLER</span><span style="text-align:right">O</span><span style="text-align:right">R</span><span style="text-align:right">W</span><span style="text-align:right">DOTS</span><span style="text-align:right">ECON</span>
+            </div>
+            <sc-for list="{{ inn1Bowl }}" as="r" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:minmax(160px,1fr) 56px 52px 44px 56px 60px;gap:0 8px;align-items:center;padding:9px 12px;border-bottom:1px dotted #E4DBC6">
+                <span style="font-weight:700;font-size:13.5px">{{ r.name }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.o }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.r }}</span>
+                <span style="{{ r.wStyle }}">{{ r.w }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.dots }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px">{{ r.econ }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- ==== 2ND INNINGS CARD ==== -->
+        <sc-if value="{{ showCard2 }}" hint-placeholder-val="{{ false }}">
+          <div id="panel-innings2" data-screen-label="2nd Innings Card" style="background:#FFFDF6;border:1px solid #211C13;border-top:none;border-radius:0 0 14px 14px;padding:22px">
+            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+              <span style="display:inline-flex;align-items:center;gap:8px;font-family:'Archivo';font-weight:900;font-stretch:70%;font-size:24px;text-transform:uppercase"><span style="width:10px;height:10px;border-radius:2px;background:#1849C6"></span>India</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#7C7160">353/9 (50.0 ov) &middot; RR 7.06 &middot; chasing 353</span>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(180px,1fr) 44px 44px 62px 40px 40px 56px;gap:0 8px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.5px;color:#7C7160;padding:8px 12px;border-bottom:2px solid #211C13">
+              <span>BATSMAN</span><span style="text-align:right">R</span><span style="text-align:right">B</span><span style="text-align:right">STRK</span><span style="text-align:right">4s</span><span style="text-align:right">6s</span><span style="text-align:right">SR</span>
+            </div>
+            <sc-for list="{{ inn2Bat }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:minmax(180px,1fr) 44px 44px 62px 40px 40px 56px;gap:0 8px;align-items:center;padding:9px 12px;border-bottom:1px dotted #E4DBC6">
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px">{{ r.name }}<sc-if value="{{ r.ia }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1px;background:#D99000;color:#211C13;border-radius:4px;padding:1px 5px">IA</span></sc-if><sc-if value="{{ r.duck }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px">&#129414;</span></sc-if></div>
+                  <div style="{{ r.outStyle }}">{{ r.out }}</div>
+                </div>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px">{{ r.r }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.b }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.strk }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.f4 }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.f6 }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px">{{ r.sr }}</span>
+              </div>
+            </sc-for>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1849C6;color:#EFF3FE;border-radius:10px;padding:13px 18px;margin-top:14px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2.5px;color:rgba(239,243,254,.7)">TOTAL &middot; 9 WKTS &middot; 50.0 OV &middot; EXTRAS 4</span>
+              <span style="font-family:'Archivo';font-weight:900;font-stretch:66%;font-size:30px;line-height:1">353/9</span>
+            </div>
+            <div style="font-family:'Newsreader',serif;font-size:14px;color:#4E4636;line-height:1.6;margin-top:12px"><b style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.5px;color:#7C7160">FALL OF WICKETS&nbsp;&nbsp;</b>15&ndash;1 (Sehwag, 3.2) &middot; 74&ndash;2 (Dravid, 14.1) &middot; 96&ndash;3 (Sharma, 19.3) &middot; 201&ndash;4 (Tendulkar, 32.4) &middot; 259&ndash;5 (Kohli, 39.1) &middot; 302&ndash;6 (Dhoni, 43.5) &middot; 315&ndash;7 (Dev, 45.2) &middot; 316&ndash;8 (Kumble, 46.1) &middot; 344&ndash;9 (Jadeja, 48.3)</div>
+            <div style="height:1px;background:#E4DBC6;margin:18px 0"></div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px"><span style="font-family:'Archivo';font-weight:900;font-stretch:70%;font-size:18px;text-transform:uppercase">Bowling</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7C7160">Australia</span></div>
+            <div style="display:grid;grid-template-columns:minmax(160px,1fr) 56px 52px 44px 56px 60px;gap:0 8px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.5px;color:#7C7160;padding:8px 12px;border-bottom:2px solid #211C13">
+              <span>BOWLER</span><span style="text-align:right">O</span><span style="text-align:right">R</span><span style="text-align:right">W</span><span style="text-align:right">DOTS</span><span style="text-align:right">ECON</span>
+            </div>
+            <sc-for list="{{ inn2Bowl }}" as="r" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:minmax(160px,1fr) 56px 52px 44px 56px 60px;gap:0 8px;align-items:center;padding:9px 12px;border-bottom:1px dotted #E4DBC6">
+                <span style="font-weight:700;font-size:13.5px">{{ r.name }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.o }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.r }}</span>
+                <span style="{{ r.wStyle }}">{{ r.w }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7C7160">{{ r.dots }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px">{{ r.econ }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </section>
+
+    </main>
+  </div>
+</div>
+</div>
+
+<!-- ============ RULES MODAL ============ -->
+<sc-if value="{{ showRules }}" hint-placeholder-val="{{ false }}">
+  <div id="rules-modal" data-screen-label="Rules Modal" style="position:fixed;inset:0;z-index:60;background:rgba(33,28,19,.55);display:flex;align-items:center;justify-content:center;padding:24px" onClick="{{ closeRules }}">
+    <div style="background:#FFFDF6;border:1px solid #211C13;border-radius:16px;max-width:520px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:8px 8px 0 rgba(33,28,19,.3)" onClick="{{ stopProp }}">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:#211C13;color:#F3EDDF;border-radius:15px 15px 0 0">
+        <span style="font-family:'Archivo';font-weight:900;font-stretch:70%;font-size:20px;text-transform:uppercase;letter-spacing:1px">How dice cricket works</span>
+        <button id="rules-close-btn" onClick="{{ closeRules }}" style="cursor:pointer;background:none;border:1px solid rgba(243,237,223,.35);border-radius:8px;color:#F3EDDF;width:32px;height:32px;font-size:15px" style-hover="background:rgba(243,237,223,.15)">&#10005;</button>
+      </div>
+      <div style="padding:22px 24px;display:flex;flex-direction:column;gap:14px;font-family:'Newsreader',serif;font-size:16px;line-height:1.55;color:#39332A">
+        <p style="margin:0">Every ball is a roll of <b>two dice</b>. The pair decides the outcome &mdash; runs, a dot, a boundary, or pressure on the batsman.</p>
+        <p style="margin:0"><b>Doubles are strikes.</b> Matching dice put a strike on the striker; fill the strike meter (6 strikes) and he&rsquo;s out. Player ratings and live averages tilt the odds.</p>
+        <p style="margin:0"><b>Boundaries:</b> a 4&ndash;5 pair is FOUR; 1&ndash;6 is TWO SIXES &mdash; 12 runs off one ball.</p>
+        <p style="margin:0"><b>Phases matter.</b> Powerplay boosts boundaries, the middle overs favour bowlers, and the death is pure chaos.</p>
+        <p style="margin:0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7C7160">Seeds are random &mdash; every simulation is a fresh match.</p>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 1240},
+  &quot;phase&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;POWERPLAY&quot;, &quot;MIDDLE&quot;, &quot;DEATH&quot;], &quot;default&quot;: &quot;DEATH&quot;, &quot;section&quot;: &quot;Match state&quot;},
+  &quot;defaultTab&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;commentary&quot;, &quot;worm&quot;, &quot;card1&quot;, &quot;card2&quot;], &quot;default&quot;: &quot;commentary&quot;, &quot;section&quot;: &quot;Match state&quot;},
+  &quot;showResultBanner&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;section&quot;: &quot;Match state&quot;}
+}">
+class Component extends DCLogic {
+  state = { activeTab: null, showRules: false, lineupsOpen: true };
+
+  renderVals() {
+    const active = this.state.activeTab ?? (this.props.defaultTab ?? 'commentary');
+    const phase = this.props.phase ?? 'DEATH';
+
+    const tabBase = "cursor:pointer;font-family:'Archivo';font-weight:800;font-size:13.5px;letter-spacing:.5px;padding:12px 18px 14px;border:1px solid #211C13;border-bottom:none;border-radius:10px 10px 0 0;";
+    const tabStyle = (on) => this.parseStyle(tabBase + (on
+      ? "background:#211C13;color:#F3EDDF;"
+      : "background:#EDE5D2;color:#5B5344;"));
+
+    const tabs = [
+      { key: 'commentary', domId: 'tab-commentary', label: 'Commentary' },
+      { key: 'worm', domId: 'tab-worm', label: 'Run Worm' },
+      { key: 'card1', domId: 'tab-innings1', label: '1st Innings Card' },
+      { key: 'card2', domId: 'tab-innings2', label: '2nd Innings Card' },
+    ].map(t => ({
+      ...t,
+      style: tabStyle(active === t.key),
+      select: () => this.setState({ activeTab: t.key }),
+    }));
+
+    // ---- commentary feed ----
+    const badgeBase = 'flex:none;width:34px;text-align:center;font-family:IBM Plex Mono,monospace;font-size:11px;font-weight:600;border-radius:6px;padding:4px 0;';
+    const badgeStyles = {
+      dot:  badgeBase + 'background:none;border:1px dashed #B4A88F;color:#7C7160;',
+      run:  badgeBase + 'background:#EDE5D2;color:#211C13;border:1px solid #D9CFB6;',
+      four: badgeBase + 'background:#D99000;color:#211C13;border:1px solid #211C13;',
+      six:  badgeBase + 'background:#211C13;color:#F0C464;border:1px solid #211C13;',
+      strike: badgeBase + 'background:#FFF0E8;color:#C43D0C;border:1px solid #C43D0C;',
+      wicket: badgeBase + 'background:#C43D0C;color:#FFF4E8;border:1px solid #211C13;',
+    };
+    const rowBase = 'display:flex;align-items:center;gap:14px;padding:11px 22px;border-bottom:1px dotted #E4DBC6;';
+    const rowStyles = {
+      normal: rowBase,
+      wicket: rowBase + 'background:#FBEDE4;border-left:4px solid #C43D0C;padding-left:18px;',
+    };
+    const textNormal = "flex:1;font-family:'Newsreader',serif;font-size:15px;color:#39332A;";
+    const textWicket = "flex:1;font-family:'Newsreader',serif;font-size:15px;color:#211C13;font-weight:600;";
+
+    const feedRaw = [
+      ['49.6', '1', 'run', '[4–1] Quick single — Jasprit Bumrah scampers through. INDIA WIN BY 1 WICKET!', false],
+      ['49.5', '•', 'dot', '[3–3] Dot ball. Hayden hits the blockhole, Bumrah can\u2019t get it away. One needed off one.', false],
+      ['49.4', '4', 'four', '[4–5] FOUR! Zaheer Khan carves it through point — scores level!', false],
+      ['49.3', 'S', 'strike', '[5–5] Beaten! A strike on Zaheer Khan (6/7). One more and he\u2019s gone.', false],
+      ['49.2', '1', 'run', '[4–1] Quick single, Jasprit Bumrah rotates strike.', false],
+      ['49.1', '•', 'dot', '[2–4] Dot. Hayden charges in at the death, Zaheer defends.', false],
+      ['48.6', '2', 'run', '[3–5] Two runs, Zaheer Khan works it into the gap and pushes hard.', false],
+      ['48.5', 'S', 'strike', '[2–2] Beaten! A strike on Jasprit Bumrah (1/6).', false],
+      ['48.4', '6', 'six', '[1–6] SIX! Zaheer Khan clears long-on. Wankhede erupts!', false],
+      ['48.3', 'W', 'wicket', 'OUT! Ravindra Jadeja is gone — 3 total strikes. Lillee gets the breakthrough. India 344/9.', true],
+      ['48.2', '1', 'run', '[4–1] Quick single, Ravindra Jadeja keeps the chase alive.', false],
+      ['48.1', '•', 'dot', '[3–3] Dot ball to start the over. Lillee to Jadeja.', false],
+    ];
+    const feed = feedRaw.map(([ov, badge, kind, text, wicket]) => ({
+      ov, badge, text,
+      badgeStyle: this.parseStyle(badgeStyles[kind]),
+      rowStyle: this.parseStyle(wicket ? rowStyles.wicket : rowStyles.normal),
+      textStyle: this.parseStyle(wicket ? textWicket : textNormal),
+    }));
+
+    // ---- lineups ----
+    const indiaLineup = [
+      { name: 'Sachin Tendulkar', bat: 10, bowl: 4, ia: false },
+      { name: 'Virender Sehwag', bat: 8, bowl: 2, ia: false },
+      { name: 'Rahul Dravid', bat: 9, bowl: 1, ia: false },
+      { name: 'Virat Kohli', bat: 9, bowl: 2, ia: true },
+      { name: 'Rohit Sharma', bat: 8, bowl: 1, ia: false },
+      { name: 'MS Dhoni', bat: 8, bowl: 1, ia: false },
+      { name: 'Kapil Dev', bat: 7, bowl: 8, ia: false },
+      { name: 'Ravindra Jadeja', bat: 6, bowl: 8, ia: false },
+      { name: 'Anil Kumble', bat: 3, bowl: 9, ia: false },
+      { name: 'Zaheer Khan', bat: 3, bowl: 8, ia: false },
+      { name: 'Jasprit Bumrah', bat: 2, bowl: 10, ia: true },
+    ];
+    const ausLineup = [
+      { name: 'Matthew Hayden', bat: 9, bowl: 3, ia: false },
+      { name: 'David Warner', bat: 9, bowl: 1, ia: true },
+      { name: 'Don Bradman', bat: 10, bowl: 2, ia: false },
+      { name: 'Ricky Ponting', bat: 9, bowl: 2, ia: false },
+      { name: 'Steve Smith', bat: 9, bowl: 3, ia: false },
+      { name: 'Allan Border', bat: 8, bowl: 3, ia: false },
+      { name: 'Adam Gilchrist', bat: 8, bowl: 1, ia: true },
+      { name: 'Shane Warne', bat: 4, bowl: 10, ia: false },
+      { name: 'Dennis Lillee', bat: 3, bowl: 9, ia: false },
+      { name: 'Glenn McGrath', bat: 2, bowl: 9, ia: false },
+      { name: 'Brett Lee', bat: 3, bowl: 8, ia: false },
+    ];
+
+    // ---- innings cards ----
+    const outMuted = 'font-family:IBM Plex Mono,monospace;font-size:10.5px;color:#7C7160;margin-top:3px;';
+    const outNotOut = 'font-family:IBM Plex Mono,monospace;font-size:10.5px;color:#3E7A46;font-weight:600;margin-top:3px;';
+    const outDnb = 'font-family:IBM Plex Mono,monospace;font-size:10.5px;color:#B4A88F;margin-top:3px;';
+    const mkBat = (rows) => rows.map(r => ({
+      ...r,
+      outStyle: this.parseStyle(r.kind === 'notout' ? outNotOut : r.kind === 'dnb' ? outDnb : outMuted),
+    }));
+
+    const inn1Bat = mkBat([
+      { name: 'Matthew Hayden', out: 'out — live avg vs Anil Kumble', r: 82, b: 52, strk: 9, f4: 13, f6: 1, sr: 158 },
+      { name: 'David Warner', ia: true, out: 'out — live avg vs Ravindra Jadeja', r: 33, b: 36, strk: 10, f4: 4, f6: 1, sr: 92 },
+      { name: 'Don Bradman', out: 'out — live avg vs Zaheer Khan', r: 57, b: 57, strk: 10, f4: 8, f6: 1, sr: 100 },
+      { name: 'Ricky Ponting', out: 'out — live avg vs Ravindra Jadeja', r: 48, b: 38, strk: 10, f4: 7, f6: 1, sr: 126 },
+      { name: 'Steve Smith', out: 'out — live avg vs Zaheer Khan', r: 34, b: 38, strk: 10, f4: 5, f6: 0, sr: 89 },
+      { name: 'Allan Border', out: 'not out', kind: 'notout', r: 51, b: 39, strk: 3, f4: 2, f6: 3, sr: 131 },
+      { name: 'Adam Gilchrist', ia: true, out: 'out — live avg vs Jasprit Bumrah', r: 40, b: 26, strk: 8, f4: 4, f6: 2, sr: 154 },
+      { name: 'Shane Warne', out: 'out — live avg vs Zaheer Khan', r: 2, b: 12, strk: 7, f4: 0, f6: 0, sr: 17 },
+      { name: 'Dennis Lillee', out: 'not out', kind: 'notout', r: 5, b: 2, strk: 0, f4: 1, f6: 0, sr: 250 },
+      { name: 'Glenn McGrath', out: 'did not bat', kind: 'dnb', r: '—', b: '—', strk: '—', f4: '—', f6: '—', sr: '—' },
+      { name: 'Brett Lee', out: 'did not bat', kind: 'dnb', r: '—', b: '—', strk: '—', f4: '—', f6: '—', sr: '—' },
+    ]);
+
+    const inn2Bat = mkBat([
+      { name: 'Sachin Tendulkar', out: 'out — live avg vs Glenn McGrath', r: 91, b: 89, strk: 8, f4: 11, f6: 2, sr: 102 },
+      { name: 'Virender Sehwag', out: 'out — live avg vs Dennis Lillee', r: 8, b: 10, strk: 6, f4: 1, f6: 0, sr: 80 },
+      { name: 'Rahul Dravid', out: 'out — live avg vs Shane Warne', r: 24, b: 41, strk: 9, f4: 2, f6: 0, sr: 59 },
+      { name: 'Virat Kohli', ia: true, out: 'out — live avg vs Brett Lee', r: 68, b: 62, strk: 10, f4: 7, f6: 2, sr: 110 },
+      { name: 'Rohit Sharma', out: 'out — live avg vs Glenn McGrath', r: 12, b: 18, strk: 8, f4: 1, f6: 0, sr: 67 },
+      { name: 'MS Dhoni', out: 'out — live avg vs Shane Warne', r: 55, b: 49, strk: 9, f4: 4, f6: 3, sr: 112 },
+      { name: 'Kapil Dev', out: 'out — live avg vs Dennis Lillee', r: 38, b: 27, strk: 7, f4: 3, f6: 2, sr: 141 },
+      { name: 'Ravindra Jadeja', out: 'out — 3 total strikes', r: 17, b: 22, strk: 12, f4: 1, f6: 0, sr: 77 },
+      { name: 'Anil Kumble', duck: true, out: 'out — live avg vs Shane Warne', r: 0, b: 4, strk: 5, f4: 0, f6: 0, sr: 0 },
+      { name: 'Zaheer Khan', out: 'not out', kind: 'notout', r: 29, b: 28, strk: 6, f4: 2, f6: 1, sr: 104 },
+      { name: 'Jasprit Bumrah', ia: true, out: 'not out', kind: 'notout', r: 7, b: 8, strk: 1, f4: 0, f6: 0, sr: 88 },
+    ]);
+
+    const wPlain = 'text-align:right;font-family:IBM Plex Mono,monospace;font-size:12.5px;color:#7C7160;';
+    const wHot = 'text-align:right;font-family:IBM Plex Mono,monospace;font-size:13px;font-weight:600;color:#C43D0C;';
+    const mkBowl = (rows) => rows.map(r => ({ ...r, wStyle: this.parseStyle(r.w >= 2 ? wHot : wPlain) }));
+
+    const inn1Bowl = mkBowl([
+      { name: 'Jasprit Bumrah', o: '10.0', r: 100, w: 1, dots: 12, econ: '10.0' },
+      { name: 'Kapil Dev', o: '8.0', r: 50, w: 0, dots: 15, econ: '6.3' },
+      { name: 'Zaheer Khan', o: '8.0', r: 41, w: 3, dots: 14, econ: '5.1' },
+      { name: 'Anil Kumble', o: '10.0', r: 69, w: 1, dots: 22, econ: '6.9' },
+      { name: 'Ravindra Jadeja', o: '10.0', r: 72, w: 2, dots: 21, econ: '7.2' },
+      { name: 'Sachin Tendulkar', o: '4.0', r: 20, w: 0, dots: 12, econ: '5.0' },
+    ]);
+    const inn2Bowl = mkBowl([
+      { name: 'Glenn McGrath', o: '10.0', r: 58, w: 2, dots: 31, econ: '5.8' },
+      { name: 'Brett Lee', o: '10.0', r: 74, w: 1, dots: 22, econ: '7.4' },
+      { name: 'Dennis Lillee', o: '10.0', r: 66, w: 2, dots: 28, econ: '6.6' },
+      { name: 'Shane Warne', o: '10.0', r: 71, w: 3, dots: 26, econ: '7.1' },
+      { name: 'Steve Smith', o: '6.0', r: 42, w: 0, dots: 9, econ: '7.0' },
+      { name: 'Allan Border', o: '4.0', r: 38, w: 1, dots: 6, econ: '9.5' },
+    ]);
+
+    return {
+      tabs,
+      showCommentary: active === 'commentary',
+      showWorm: active === 'worm',
+      showCard1: active === 'card1',
+      showCard2: active === 'card2',
+      feed, indiaLineup, ausLineup,
+      inn1Bat, inn1Bowl, inn2Bat, inn2Bowl,
+      isPowerplay: phase === 'POWERPLAY',
+      isMiddle: phase === 'MIDDLE',
+      isDeath: phase === 'DEATH',
+      showResultBanner: this.props.showResultBanner ?? true,
+      showRules: this.state.showRules,
+      openRules: () => this.setState({ showRules: true }),
+      closeRules: () => this.setState({ showRules: false }),
+      stopProp: (e) => e.stopPropagation(),
+      lineupsOpen: this.state.lineupsOpen,
+      lineupsChevron: this.state.lineupsOpen ? '▴ HIDE' : '▾ SHOW',
+      toggleLineups: () => this.setState(s => ({ lineupsOpen: !s.lineupsOpen })),
+    };
+  }
+
+  parseStyle(css) {
+    const o = {};
+    css.split(';').forEach(d => {
+      const i = d.indexOf(':');
+      if (i < 0) return;
+      const k = d.slice(0, i).trim();
+      const v = d.slice(i + 1).trim();
+      if (!k || !v) return;
+      o[k.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = v;
+    });
+    return o;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,303 +1,384 @@
 // ============================================================================
-// Cricket Notebook — UI controller (playback, scorecards, worm chart)
+// Cricket Notebook — UI controller for the editorial design
+// (design source: claude.ai/design project f28e38c9-5ee1-4c9d-9d39-5751cc5f4bca)
 // ============================================================================
 const $ = (id) => document.getElementById(id);
 const T = window.TEAMS;
 
 const state = { match: null, timeline: [], idx: -1, playing: false, timer: null };
 
-function teamColor(name) { return name === "India" ? "var(--ind)" : "var(--aus)"; }
-function teamObj(name) { return name === "India" ? T.India : T.Australia; }
+// team visual identities (from the design: India blue, Australia gold)
+const TEAM_STYLE = {
+  India:     { sq: "#1849C6", bar: "var(--blue-bright)", label: "var(--blue-pale)", line: "#3D6BE8", total: "blue" },
+  Australia: { sq: "#D99000", bar: "var(--gold)",        label: "var(--gold)",     line: "#D99000", total: "ink" }
+};
+const ts = (name) => TEAM_STYLE[name] || TEAM_STYLE.India;
 
-// average batting rating helper for the matchup card
-function avgBat(team) {
+function fmtAvg(team) {
   const b = team.lineup.reduce((s, p) => s + p.batting, 0) / team.lineup.length;
-  const bo = team.lineup.reduce((s, p) => s + p.bowling, 0) / team.lineup.length;
-  return `Bat ${b.toFixed(1)} · Bowl ${bo.toFixed(1)}`;
+  const o = team.lineup.reduce((s, p) => s + p.bowling, 0) / team.lineup.length;
+  return `BAT ${b.toFixed(1)} · BOWL ${o.toFixed(1)}`;
 }
+function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
-// ---------- init ----------
+// ---------------------------------------------------------------------------
+// init
+// ---------------------------------------------------------------------------
 function init() {
-  const stadSel = $("stadium");
+  const stadSel = $("stadium-select");
   window.STADIUMS.forEach(s => {
     const o = document.createElement("option");
     o.value = s.id; o.textContent = `${s.name} — ${s.city}`;
     stadSel.appendChild(o);
   });
   stadSel.value = "mumbai";
-  updateStadiumTag();
 
-  const fmtSel = $("format");
+  const fmtSel = $("format-select");
   Object.values(window.FORMATS).forEach(f => {
     const o = document.createElement("option");
-    o.value = f.key; o.textContent = f.label;
+    o.value = f.key; o.textContent = f.label.replace(" — ", " — ");
     fmtSel.appendChild(o);
   });
   fmtSel.value = "T20";
+  updateChip();
 
-  $("indAvg").textContent = avgBat(T.India);
-  $("ausAvg").textContent = avgBat(T.Australia);
+  $("ind-avg").textContent = fmtAvg(T.India);
+  $("aus-avg").textContent = fmtAvg(T.Australia);
   renderLineups();
 
-  $("btnSim").onclick = () => runMatch();
-  $("btnReplay").onclick = () => { if (state.match) runMatch(state.match.seed); };
-  $("btnRules").onclick = showRules;
-  $("stadium").onchange = updateStadiumTag;
-  $("format").onchange = updateStadiumTag;
-  $("toggleLineups").onclick = () => {
-    const el = $("lineups"); const hidden = el.classList.toggle("hidden");
-    $("toggleLineups").textContent = hidden ? "Show lineups ▾" : "Hide lineups ▴";
+  $("simulate-btn").onclick = () => runMatch();
+  $("replay-btn").onclick = () => { if (state.match) runMatch(state.match.seed); };
+  $("rules-btn").onclick = openRules;
+  $("rules-close-btn").onclick = closeRules;
+  $("rules-modal").onclick = (e) => { if (e.target === $("rules-modal")) closeRules(); };
+  stadSel.onchange = updateChip;
+  fmtSel.onchange = updateChip;
+  $("lineups-toggle").onclick = () => {
+    const hidden = $("lineups-box").classList.toggle("hidden");
+    $("lineups-chev").innerHTML = hidden ? "&#9662; SHOW" : "&#9652; HIDE";
   };
-  $("btnPlay").onclick = togglePlay;
-  $("btnStep").onclick = () => { pause(); step(1); };
-  $("btnStepBack").onclick = () => { pause(); step(-1); };
-  $("btnSkip").onclick = skipInnings;
-  $("speed").oninput = () => { if (state.playing) { pause(); play(); } };
 
-  document.querySelectorAll(".tab").forEach(t => t.onclick = () => switchTab(t.dataset.tab));
+  $("play-btn").onclick = togglePlay;
+  $("step-fwd-btn").onclick = () => { pause(); step(1); };
+  $("step-back-btn").onclick = () => { pause(); step(-1); };
+  $("skip-innings-btn").onclick = skipInnings;
+  $("speed-slider").oninput = () => { if (state.playing) { pause(); play(); } };
 
-  // hidden replay/testing deep-link: ?seed=7&format=ODI&stadium=mumbai&auto=1
+  document.querySelectorAll(".cn-tab").forEach(t => t.onclick = () => switchTab(t.dataset.tab));
+
+  renderRulesBody();
+
+  // hidden replay/testing deep-link: ?seed=7&format=ODI&stadium=mumbai&auto=1&to=60&tab=worm
   const q = new URLSearchParams(location.search);
   const linkSeed = q.get("seed") ? (parseInt(q.get("seed")) >>> 0) : null;
-  if (q.get("format") && window.FORMATS[q.get("format")]) $("format").value = q.get("format");
-  if (q.get("stadium") && window.STADIUMS.some(s => s.id === q.get("stadium"))) { $("stadium").value = q.get("stadium"); updateStadiumTag(); }
-  if (q.get("auto")) { runMatch(linkSeed); if (q.get("to")) { const n = parseInt(q.get("to")); while (state.idx < Math.min(n, state.timeline.length - 1)) step(1); } if (q.get("tab")) switchTab(q.get("tab")); }
+  if (q.get("format") && window.FORMATS[q.get("format")]) { fmtSel.value = q.get("format"); updateChip(); }
+  if (q.get("stadium") && window.STADIUMS.some(s => s.id === q.get("stadium"))) { stadSel.value = q.get("stadium"); updateChip(); }
+  if (q.get("auto")) {
+    runMatch(linkSeed);
+    if (q.get("to")) { const n = parseInt(q.get("to")); while (state.idx < Math.min(n, state.timeline.length - 1)) step(1); }
+    if (q.get("tab")) switchTab(q.get("tab"));
+  }
+  if (q.get("rules")) openRules();
 }
 
-function updateStadiumTag() {
-  const s = window.STADIUMS.find(x => x.id === $("stadium").value);
-  const fmt = window.FORMATS[$("format") && $("format").value] || window.FORMATS.T20;
-  $("stadiumTag").textContent = `📍 ${s.name}, ${s.city} · ${fmt.overs} overs`;
+function updateChip() {
+  const s = window.STADIUMS.find(x => x.id === $("stadium-select").value);
+  const f = window.FORMATS[$("format-select").value] || window.FORMATS.T20;
+  $("chip-stadium").textContent = `${s.name}, ${s.city}`;
+  $("chip-format").textContent = `${f.key} · ${f.overs} overs`;
 }
 
 function renderLineups() {
-  const box = $("lineups");
+  const box = $("lineups-box");
   box.innerHTML = ["India", "Australia"].map(tn => {
-    const t = teamObj(tn);
-    const rows = t.lineup.map(p =>
-      `<div class="lp"><b>${p.name}${p.captain ? " (c)" : ""}${p.keeper ? " †" : ""}</b>
-        <span class="rt">B${p.batting}/O${p.bowling} ${p.ia ? '<span class="ia">IA</span>' : ""}</span></div>`
-    ).join("");
-    return `<div style="margin-bottom:12px"><div style="color:${teamColor(tn)};font-weight:700;margin-bottom:4px">${tn}</div>${rows}</div>`;
+    const t = T[tn];
+    const capColor = tn === "India" ? "var(--blue)" : "var(--gold-deep)";
+    const rows = t.lineup.map(p => `
+      <div class="lp-row">
+        <span class="nm">${escapeHtml(p.name)}${p.captain ? " (c)" : ""}${p.keeper ? " †" : ""}${p.ia ? ' <span class="ia-badge">IA</span>' : ""}</span>
+        <span class="rt">bat ${p.batting} · bwl ${p.bowling}</span>
+      </div>`).join("");
+    return `<div>
+      <div class="lineup-team-cap" style="color:${capColor}"><span class="dot7" style="background:${ts(tn).sq}"></span>${tn}</div>
+      <div style="display:flex;flex-direction:column">${rows}</div>
+    </div>`;
   }).join("");
 }
 
-// ---------- run ----------
-// Seed is never user-chosen: each simulate draws a fresh random seed.
-// (seedOverride powers Replay and the hidden ?seed= replay/testing deep-link.)
+// ---------------------------------------------------------------------------
+// run / seed
+// ---------------------------------------------------------------------------
 function randomSeed() {
-  if (window.crypto && crypto.getRandomValues) {
-    return crypto.getRandomValues(new Uint32Array(1))[0] || 1;
-  }
+  if (window.crypto && crypto.getRandomValues) return crypto.getRandomValues(new Uint32Array(1))[0] || 1;
   return Math.floor(Math.random() * 0xFFFFFFFF) || 1;
 }
 
 function runMatch(seedOverride) {
   pause();
-  const format = window.FORMATS[$("format").value] || window.FORMATS.T20;
+  const format = window.FORMATS[$("format-select").value] || window.FORMATS.T20;
   const seed = (seedOverride != null) ? (seedOverride >>> 0) : randomSeed();
-  const stadium = window.STADIUMS.find(x => x.id === $("stadium").value);
+  const stadium = window.STADIUMS.find(x => x.id === $("stadium-select").value);
   const m = simulateMatch(T.India, T.Australia, { format, seed, stadium: stadium.name });
   state.match = m;
   state.timeline = [...m.innings[0].ballLog, ...m.innings[1].ballLog];
   state.idx = -1;
-  $("liveArea").classList.remove("hidden");
-  $("resultBanner").classList.add("hidden");
+  $("live-area").classList.remove("hidden");
+  $("result-banner").classList.add("hidden");
   $("feed").innerHTML = "";
-  // scorecard + worm now build progressively from renderAt() as balls are played
   step(1);
-  switchTab("feed");
+  switchTab("commentary");
 }
 
-// ---------- playback ----------
+// ---------------------------------------------------------------------------
+// playback
+// ---------------------------------------------------------------------------
 function togglePlay() { state.playing ? pause() : play(); }
 function play() {
-  if (state.idx >= state.timeline.length - 1) { rebuildFeed(-1); state.idx = -1; }
-  state.playing = true; $("btnPlay").textContent = "⏸ Pause";
-  const speed = 760 - parseInt($("speed").value);
+  if (!state.match) return;
+  if (state.idx >= state.timeline.length - 1) { $("feed").innerHTML = ""; state.idx = -1; }
+  state.playing = true; $("play-btn").innerHTML = "&#9208;&#65038; Pause";
+  const v = parseInt($("speed-slider").value);           // 1 (slow) .. 10 (fast)
+  const interval = Math.max(50, 850 - v * 80);
   state.timer = setInterval(() => {
     if (state.idx >= state.timeline.length - 1) { pause(); return; }
     step(1);
-  }, Math.max(50, speed));
+  }, interval);
 }
 function pause() {
-  state.playing = false; $("btnPlay") && ($("btnPlay").textContent = "▶ Play");
+  state.playing = false;
+  if ($("play-btn")) $("play-btn").innerHTML = "&#9654;&#65038; Play";
   if (state.timer) { clearInterval(state.timer); state.timer = null; }
 }
 function step(dir) {
   const ni = state.idx + dir;
   if (ni < 0 || ni >= state.timeline.length) return;
-  if (dir === 1) { appendFeed(state.timeline[ni], ni); }
-  else { removeLastFeed(); }
+  if (dir === 1) appendFeed(state.timeline[ni], ni);
+  else removeLastFeed();
   state.idx = ni;
   renderAt(ni);
 }
 function skipInnings() {
   pause();
-  const cur = state.idx < 0 ? 0 : state.timeline[state.idx].inningNo;
-  // jump to last ball of current innings, or end of match if already in 2nd
+  if (!state.match) return;
+  const cur = state.idx < 0 ? 1 : state.timeline[state.idx].inningNo;
   let target = state.timeline.length - 1;
   if (cur === 1) {
     for (let i = 0; i < state.timeline.length; i++) if (state.timeline[i].inningNo === 2) { target = i - 1; break; }
   }
-  rebuildFeed(target);
+  $("feed").innerHTML = "";
+  for (let i = 0; i <= target; i++) appendFeed(state.timeline[i], i);
   state.idx = target;
   renderAt(target);
 }
 
-// ---------- render current state ----------
+// ---------------------------------------------------------------------------
+// per-ball render
+// ---------------------------------------------------------------------------
 function renderAt(idx) {
   const m = state.match, e = state.timeline[idx];
   const first = m.battingFirst, second = m.battingSecond;
-  const inn1 = m.innings[0], inn2 = m.innings[1];
+  const inn1 = m.innings[0];
 
-  // scoreboard slot A = battingFirst, B = battingSecond
-  paintTeam("A", first);
-  paintTeam("B", second);
-  let aScore, aMeta, bScore, bMeta;
-  if (e.inningNo === 1) {
-    aScore = `${e.teamScore}/${e.wickets}`; aMeta = `${oversStr(idx, 1)} ov`;
-    bScore = "—"; bMeta = "yet to bat";
-    setActive("A");
-  } else {
-    aScore = `${inn1.total}/${inn1.wickets}`; aMeta = `${inn1.oversDecimal} ov`;
-    bScore = `${e.teamScore}/${e.wickets}`; bMeta = `${oversStr(idx, 2)} ov`;
-    setActive("B");
-  }
-  $("sbAScore").textContent = aScore; $("sbAMeta").textContent = aMeta;
-  $("sbBScore").textContent = bScore; $("sbBMeta").textContent = bMeta;
+  // scoreboard slabs: A = batting first, B = batting second
+  paintSlab("a", first, e.inningNo === 1 ? e : null, inn1, 1, idx);
+  paintSlab("b", second, e.inningNo === 2 ? e : null, inn1, 2, idx);
 
-  // status / chase
-  if (e.inningNo === 1) {
-    $("sbStatus").innerHTML = `<b>1st innings</b> · ${first} batting. Setting a total for ${second} to chase.`;
+  // chase strip
+  const done = idx === state.timeline.length - 1;
+  if (done) {
+    const r = m.result;
+    $("chase-cap").textContent = "RESULT";
+    if (r.type === "tie") $("chase-text").innerHTML = `Scores level on <b>${inn1.total}</b> — an honest tie. No super over.`;
+    else if (r.type === "chase") {
+      const ballsLeft = m.overs * 6 - ballsInInnings(idx, 2);
+      $("chase-text").innerHTML = `Target <b>${m.target}</b> · ${second} got there with <b>${ballsLeft} ball${ballsLeft === 1 ? "" : "s"}</b> to spare · won by <b>${r.margin}</b>`;
+    } else {
+      $("chase-text").innerHTML = `Target <b>${m.target}</b> · ${second} fell <b>${r.margin}</b> short`;
+    }
+  } else if (e.inningNo === 1) {
+    $("chase-cap").textContent = "1ST INNINGS";
+    $("chase-text").innerHTML = `${first} batting · setting a total for ${second} to chase`;
   } else {
     const need = m.target - e.teamScore;
-    const ballsBowled = ballsInInnings(idx, 2);
-    const ballsLeft = m.overs * 6 - ballsBowled;
-    if (need > 0 && e.wickets < 10 && ballsLeft > 0) {
-      $("sbStatus").innerHTML = `<b>${second}</b> need <b>${need}</b> off <span class="chase">${ballsLeft} balls</span> · Target ${m.target}`;
-    } else {
-      $("sbStatus").innerHTML = `<b>Chase:</b> target ${m.target}`;
-    }
+    const ballsLeft = m.overs * 6 - ballsInInnings(idx, 2);
+    $("chase-cap").textContent = "CHASE";
+    $("chase-text").innerHTML = `Target <b>${m.target}</b> · ${second} need <b>${Math.max(0, need)}</b> off <b>${ballsLeft} balls</b>`;
   }
 
   // crease
-  const striker = e.striker, nonS = e.nonStriker;
-  $("strikeName").innerHTML = `${escapeHtml(striker)} ${e.strikerIA ? '<span class="mini-ia">IA</span>' : ""}`;
-  $("strikeRuns").textContent = e.strikerRuns;
-  $("strikeDet").textContent = `${e.strikerBalls} balls · ${e.totalStrikes}/${e.threshold} strikes`;
-  $("strikeMeter").style.width = pct(e.totalStrikes, e.threshold);
-  if (nonS) {
-    $("chipNon").style.opacity = 1;
-    $("nonName").innerHTML = `${escapeHtml(nonS)} ${e.nonStrikerIA ? '<span class="mini-ia">IA</span>' : ""}`;
-    $("nonRuns").textContent = e.nonStrikerRuns;
-    $("nonDet").textContent = `${e.nonStrikerBalls} balls · ${e.nonStrikerStrikes}/${e.nonStrikerThreshold} strikes`;
-    $("nonMeter").style.width = pct(e.nonStrikerStrikes, e.nonStrikerThreshold);
+  $("striker-name").innerHTML = `${escapeHtml(e.striker)}${e.strikerIA ? ' <span class="ia-badge">IA</span>' : ""}`;
+  $("striker-runs").textContent = e.strikerRuns;
+  $("striker-balls").textContent = `${e.strikerBalls} ball${e.strikerBalls === 1 ? "" : "s"}`;
+  $("striker-pressure").textContent = `strikes ${e.totalStrikes}/${e.threshold}`;
+  $("striker-meter").style.width = pct(e.totalStrikes, e.threshold);
+  if (e.nonStriker) {
+    $("card-partner").style.opacity = 1;
+    $("partner-name").innerHTML = escapeHtml(e.nonStriker);
+    $("partner-tag").innerHTML = e.nonStrikerIA ? '<span class="ia-badge">IA</span>' : "";
+    $("partner-runs").textContent = e.nonStrikerRuns;
+    $("partner-balls").textContent = `${e.nonStrikerBalls} ball${e.nonStrikerBalls === 1 ? "" : "s"}`;
+    $("partner-pressure").textContent = `strikes ${e.nonStrikerStrikes}/${e.nonStrikerThreshold}`;
+    $("partner-meter").style.width = pct(e.nonStrikerStrikes, e.nonStrikerThreshold);
   } else {
-    $("chipNon").style.opacity = .4;
-    $("nonName").textContent = "—"; $("nonRuns").textContent = ""; $("nonDet").textContent = "last man";
-    $("nonMeter").style.width = "0%";
+    $("card-partner").style.opacity = .45;
+    $("partner-name").textContent = "—"; $("partner-tag").innerHTML = "";
+    $("partner-runs").textContent = ""; $("partner-balls").textContent = "last man";
+    $("partner-pressure").textContent = ""; $("partner-meter").style.width = "0%";
   }
 
-  const ptype = e.bowlerType === "spin" ? "🌀 spin" : "⚡ pace";
-  const phaseChip = e.phase ? `<span class="phase-chip ${(e.phase || "").toLowerCase()}">${e.phase}</span>` : "";
-  $("bowlerLine").innerHTML = `🎯 Bowling: <b>${escapeHtml(e.bowler)}</b> <span class="mini">${ptype} · rating ${e.bowlerRating}</span> ${phaseChip}`;
+  // bowler line + phase chip
+  $("bowler-name").textContent = e.bowler;
+  const typeIcon = e.bowlerType === "spin"
+    ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="flex:none"><path d="M12 3a9 9 0 1 0 9 9" stroke="#1849C6" stroke-width="3" stroke-linecap="round"/></svg>'
+    : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="flex:none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" fill="#C43D0C"/></svg>';
+  $("bowler-type").innerHTML = `${typeIcon} ${e.bowlerType || "pace"} &middot; rating ${e.bowlerRating}`;
+  $("chip-pp").classList.toggle("show", e.phase === "Powerplay");
+  $("chip-mid").classList.toggle("show", e.phase === "Middle");
+  $("chip-death").classList.toggle("show", e.phase === "Death");
 
   // last ball
-  if (e.pair) { $("die1").textContent = e.pair[0]; $("die2").textContent = e.pair[1]; }
-  else { $("die1").textContent = "↻"; $("die2").textContent = "↻"; }
-  $("lbBig").textContent = e.label;
-  $("lbSub").textContent = e.commentary;
-  $("lbPill").innerHTML = pillFor(e);
+  if (e.pair) {
+    diePips($("die-1"), e.pair[0]);
+    diePips($("die-2"), e.pair[1]);
+    $("lb-pair").textContent = `[${e.pair[0]}–${e.pair[1]}]`;
+  } else {
+    diePips($("die-1"), 0); diePips($("die-2"), 0);
+    $("lb-pair").textContent = "";
+  }
+  $("lb-label").textContent = e.label;
+  $("lb-comm").textContent = e.commentary;
+  paintResultPill(e);
 
-  // live scorecards + worm reflect only the balls played so far
+  // progressive scorecards + worm
   renderScorecardsAt(idx);
   renderWormAt(idx);
 
-  // result banner at end
-  if (idx === state.timeline.length - 1) showResult(); else $("resultBanner").classList.add("hidden");
+  // result banner
+  if (done) showResult(); else $("result-banner").classList.add("hidden");
 }
 
-function paintTeam(slot, name) {
-  $("sb" + slot + "Name").innerHTML = `<span style="width:9px;height:9px;border-radius:3px;background:${teamColor(name)};display:inline-block;margin-right:6px"></span>${name}`;
+function paintSlab(slot, teamName, liveEntry, inn1, innNo, idx) {
+  const st = ts(teamName);
+  $(`slab-${slot}-bar`).style.background = st.bar;
+  const m = state.match;
+  const e = state.timeline[idx];
+  const isLive = liveEntry != null;
+  const label = `${teamName.toUpperCase()} <span class="inntag">${innNo === 1 ? "1ST INN" : "2ND INN"}</span>` +
+    (isLive && idx < state.timeline.length - 1 ? ' <span class="bat-pill"><span class="dotp"></span>BATTING</span>' : "");
+  $(`slab-${slot}-label`).innerHTML = label;
+  $(`slab-${slot}-label`).style.color = st.label;
+  $(`slab-${slot}`).classList.toggle("lit", isLive);
+
+  if (innNo === 1) {
+    const score = e.inningNo === 1 ? `${e.teamScore}<span class="sl">/</span>${e.wickets}` : `${inn1.total}<span class="sl">/</span>${inn1.wickets}`;
+    const balls = e.inningNo === 1 ? ballsInInnings(idx, 1) : inn1.balls;
+    const rr = balls ? ((e.inningNo === 1 ? e.teamScore : inn1.total) / (balls / 6)).toFixed(2) : "0.00";
+    $(`slab-${slot}-score`).innerHTML = score;
+    $(`slab-${slot}-meta`).textContent = `${oversStr(balls)} overs · RR ${rr}`;
+  } else {
+    if (e.inningNo === 2) {
+      const balls = ballsInInnings(idx, 2);
+      const rr = balls ? (e.teamScore / (balls / 6)).toFixed(2) : "0.00";
+      $(`slab-${slot}-score`).innerHTML = `${e.teamScore}<span class="sl">/</span>${e.wickets}`;
+      $(`slab-${slot}-meta`).textContent = `${oversStr(balls)} overs · RR ${rr}`;
+    } else {
+      $(`slab-${slot}-score`).innerHTML = "&mdash;";
+      $(`slab-${slot}-meta`).textContent = "yet to bat";
+    }
+  }
 }
-function setActive(slot) {
-  $("sbA").classList.toggle("active", slot === "A");
-  $("sbB").classList.toggle("active", slot === "B");
-}
+
 function pct(a, b) { return Math.min(100, Math.round((a / Math.max(1, b)) * 100)) + "%"; }
-
-function oversStr(idx, inn) {
-  const b = ballsInInnings(idx, inn);
-  return Math.floor(b / 6) + "." + (b % 6);
-}
+function oversStr(balls) { return Math.floor(balls / 6) + "." + (balls % 6); }
 function ballsInInnings(idx, inn) {
   let c = 0;
   for (let i = 0; i <= idx; i++) if (state.timeline[i].inningNo === inn && state.timeline[i].pair) c++;
   return c;
 }
 
-function pillFor(e) {
-  if (e.wicket) return `<span class="pill wk">WICKET</span>`;
-  if (e.label.includes("SIX")) return `<span class="pill six">${e.runs}</span>`;
-  if (e.label.includes("FOUR")) return `<span class="pill four">${e.runs}</span>`;
-  if (e.strikes > 0) return `<span class="pill strike">${e.strikes} strike${e.strikes > 1 ? "s" : ""}</span>`;
-  if (e.runs === 0) return `<span class="pill dot">•</span>`;
-  return `<span class="pill dot">${e.runs}</span>`;
+// dice pips: positions on a 3x3 grid (percentages of die size)
+const PIPS = {
+  0: [], 1: [[50, 50]], 2: [[27, 27], [73, 73]], 3: [[27, 27], [50, 50], [73, 73]],
+  4: [[27, 27], [73, 27], [27, 73], [73, 73]], 5: [[27, 27], [73, 27], [50, 50], [27, 73], [73, 73]],
+  6: [[27, 27], [73, 27], [27, 50], [73, 50], [27, 73], [73, 73]]
+};
+function diePips(el, n) {
+  el.innerHTML = (PIPS[n] || []).map(([x, y]) => `<span class="pip" style="left:${x}%;top:${y}%"></span>`).join("");
 }
 
-// ---------- feed ----------
+function ballKind(e) {
+  if (e.wicket) return "wicket";
+  if (e.label.includes("SIX")) return "six";
+  if (e.label.includes("FOUR")) return "four";
+  if (e.strikes > 0) return "strike";
+  if (e.runs > 0) return "run";
+  return "dot";
+}
+function paintResultPill(e) {
+  const kind = ballKind(e);
+  const pill = $("result-pill");
+  pill.className = "";
+  if (kind === "wicket") { pill.classList.add("wicket"); pill.textContent = "WICKET"; }
+  else if (kind === "six") { pill.classList.add("six"); pill.textContent = e.runs; }
+  else if (kind === "four") { pill.classList.add("four"); pill.textContent = e.runs; }
+  else if (kind === "strike") { pill.classList.add("strike"); pill.textContent = e.strikes > 1 ? `${e.strikes}×S` : "S"; }
+  else pill.textContent = kind === "dot" ? "•" : e.runs;
+  pill.id = "result-pill";
+}
+
+// ---------------------------------------------------------------------------
+// feed
+// ---------------------------------------------------------------------------
+function badgeFor(e) {
+  const kind = ballKind(e);
+  const txt = kind === "wicket" ? "W" : kind === "strike" ? "S" : kind === "dot" ? "•" : e.runs;
+  return { kind, txt };
+}
 function appendFeed(e, idx) {
   const feed = $("feed");
   if (idx === 0) feed.innerHTML = "";
-  // innings separator
   if (idx > 0 && state.timeline[idx - 1].inningNo !== e.inningNo) {
     const sep = document.createElement("div");
-    sep.className = "ballrow"; sep.style.background = "rgba(255,255,255,.03)";
-    sep.innerHTML = `<div class="ov"></div><div class="cm" style="color:var(--accent-2);font-weight:700">— 2nd innings: ${state.match.battingSecond} chasing ${state.match.target} —</div>`;
+    sep.className = "feed-row sep";
+    sep.innerHTML = `<span class="ov"></span><span class="cm">2ND INNINGS — ${escapeHtml(state.match.battingSecond).toUpperCase()} CHASING ${state.match.target}</span>`;
     feed.prepend(sep);
   }
+  const { kind, txt } = badgeFor(e);
   const row = document.createElement("div");
-  row.className = "ballrow" + (e.wicket ? " wk" : "");
-  const badge = badgeFor(e);
+  row.className = "feed-row" + (e.wicket ? " wk" : "");
   const ov = e.pair ? `${e.over - 1}.${e.ballInOver}` : `${e.over - 1}.–`;
-  row.innerHTML = `<div class="ov">${ov}</div><div class="badge ${badge.cls}">${badge.txt}</div><div class="cm">${escapeHtml(e.commentary)}</div>`;
+  row.innerHTML = `<span class="ov">${ov}</span><span class="fbadge ${kind}">${txt}</span><span class="cm">${escapeHtml(e.commentary)}</span>`;
   feed.prepend(row);
-  $("feedCount").textContent = `${idx + 1} balls`;
-}
-function badgeFor(e) {
-  if (e.wicket) return { cls: "rw", txt: "W" };
-  if (e.label.includes("SIX")) return { cls: "r6", txt: e.runs };
-  if (e.label.includes("FOUR")) return { cls: "r4", txt: e.runs };
-  if (e.strikes > 0) return { cls: "rs", txt: "S" };
-  return { cls: "", txt: e.runs };
+  $("feed-count").textContent = `${idx + 1} balls`;
 }
 function removeLastFeed() {
   const feed = $("feed");
   if (feed.firstChild) feed.removeChild(feed.firstChild);
-  // clean a leftover separator
-  if (feed.firstChild && feed.firstChild.querySelector && feed.firstChild.querySelector(".cm") &&
-      feed.firstChild.textContent.includes("innings:")) feed.removeChild(feed.firstChild);
-}
-function rebuildFeed(target) {
-  $("feed").innerHTML = "";
-  for (let i = 0; i <= target; i++) appendFeed(state.timeline[i], i);
+  if (feed.firstChild && feed.firstChild.classList.contains("sep")) feed.removeChild(feed.firstChild);
+  $("feed-count").textContent = `${Math.max(0, state.idx)} balls`;
 }
 
-// ---------- result ----------
+// ---------------------------------------------------------------------------
+// result banner
+// ---------------------------------------------------------------------------
 function showResult() {
-  const r = state.match.result;
-  const b = $("resultBanner");
-  b.classList.remove("hidden");
-  if (r.type === "tie") { $("resultW").textContent = "🤝 Match Tied!"; $("resultM").textContent = `No super over — an honest tie. · Match #${state.match.seed}`; }
-  else {
-    $("resultW").innerHTML = `🏆 ${r.winner} win by ${r.margin}`;
-    $("resultM").textContent = (r.type === "chase" ? "Chased it down." : "Defended the total.") + ` · Match #${state.match.seed}`;
+  const m = state.match, r = m.result;
+  $("result-banner").classList.remove("hidden");
+  $("result-kicker").textContent = `MATCH #${m.seed} · RESULT`;
+  if (r.type === "tie") {
+    $("result-wm").textContent = "TIE";
+    $("result-title").textContent = "Match tied";
+    $("result-sub").textContent = "Scores dead level — no super over, an honest tie.";
+  } else {
+    $("result-wm").textContent = "WIN";
+    $("result-title").textContent = `${r.winner} win by ${r.margin}`;
+    $("result-sub").textContent = r.type === "chase" ? "Chased it down." : "Defended the total.";
   }
 }
 
-// ---------- scorecards (progressive: rebuilt from balls played so far) ----------
-// Replay the first `entryCount` ball-log entries of an innings into a live snapshot.
+// ---------------------------------------------------------------------------
+// progressive scorecards
+// ---------------------------------------------------------------------------
 function progressiveInnings(inn, entryCount) {
   const cards = inn.cards.map(c => ({
     ref: c.ref, name: c.name, ia: c.ia,
@@ -305,7 +386,7 @@ function progressiveInnings(inn, entryCount) {
     out: false, outMethod: null, outBowler: null, duck: false, batted: false
   }));
   const byName = {}; cards.forEach(c => byName[c.name] = c);
-  const bowl = {}; // insertion order = bowling order
+  const bowl = {};
   let total = 0, wickets = 0, balls = 0;
   const n = Math.min(entryCount, inn.ballLog.length);
   for (let i = 0; i < n; i++) {
@@ -318,7 +399,7 @@ function progressiveInnings(inn, entryCount) {
     }
     if (!bowl[e.bowler]) bowl[e.bowler] = { name: e.bowler, balls: 0, runs: 0, wickets: 0, dots: 0 };
     const b = bowl[e.bowler];
-    if (e.pair) { // a real delivery
+    if (e.pair) {
       s.runs += e.runs; s.balls++;
       if (e.label.includes("FOUR")) s.fours += e.label.includes("TWO") ? 2 : 1;
       if (e.label.includes("SIX")) s.sixes += e.label.includes("TWO") ? 2 : 1;
@@ -332,8 +413,7 @@ function progressiveInnings(inn, entryCount) {
       wickets++; b.wickets++;
     }
   }
-  const bowlerStats = Object.values(bowl).filter(b => b.balls > 0 || b.wickets > 0);
-  return { cards, bowlerStats, total, wickets, balls };
+  return { cards, bowlerStats: Object.values(bowl).filter(b => b.balls > 0 || b.wickets > 0), total, wickets, balls };
 }
 
 function renderScorecardsAt(idx) {
@@ -341,54 +421,85 @@ function renderScorecardsAt(idx) {
   const played = idx + 1;
   const c1 = Math.min(played, inn1.ballLog.length);
   const c2 = Math.max(0, played - inn1.ballLog.length);
-  $("card1").innerHTML = scorecardHtml(inn1, inn2, progressiveInnings(inn1, c1));
-  if (c2 > 0) $("card2").innerHTML = scorecardHtml(inn2, inn1, progressiveInnings(inn2, c2));
-  else $("card2").innerHTML = `<div class="empty"><div class="big">⏳</div><p><b>${escapeHtml(m.battingSecond)}</b> yet to bat — chasing <b>${m.target}</b>.</p></div>`;
+  $("panel-innings1").innerHTML = scorecardHtml(inn1, inn2, progressiveInnings(inn1, c1), false);
+  if (c2 > 0) $("panel-innings2").innerHTML = scorecardHtml(inn2, inn1, progressiveInnings(inn2, c2), true);
+  else $("panel-innings2").innerHTML = `<div class="empty-panel">${escapeHtml(m.battingSecond)} are yet to bat — chasing ${m.target}.</div>`;
 }
 
-function scorecardHtml(inn, other, prog) {
-  const bat = prog.cards.map(c => {
-    if (!c.batted) return `<tr><td class="name" style="color:var(--ink-3)">${escapeHtml(c.name)}</td><td class="how" colspan="6" style="text-align:right">did not bat</td></tr>`;
-    let how;
-    if (c.out) how = c.outMethod === "cap" ? `out — ${c.strikes} total strikes (cap)` : `out — live avg vs ${escapeHtml(c.outBowler || "")}`;
-    else how = `<span class="notout">not out</span>`;
-    const duck = c.duck ? ` <span class="duck">🦆</span>` : "";
-    return `<tr>
-      <td><div class="name">${escapeHtml(c.name)}${c.ia ? ' <span class="mini-ia">IA</span>' : ""}${duck}</div><div class="how">${how}</div></td>
-      <td>${c.runs}</td><td>${c.balls}</td><td>${c.strikes}</td><td>${c.fours}</td><td>${c.sixes}</td>
-      <td>${c.balls ? ((c.runs / c.balls) * 100).toFixed(0) : "—"}</td></tr>`;
+function scorecardHtml(inn, other, prog, isChase) {
+  const st = ts(inn.team);
+  const overs = oversStr(prog.balls);
+  const rr = prog.balls ? (prog.total / (prog.balls / 6)).toFixed(2) : "0.00";
+
+  const batRows = prog.cards.map(c => {
+    if (!c.batted) return `
+      <div class="bat-grid tbl-row">
+        <div><div class="pname" style="color:var(--faint)">${escapeHtml(c.name)}</div><div class="out-line dnb">did not bat</div></div>
+        <span class="num">—</span><span class="num">—</span><span class="num">—</span><span class="num">—</span><span class="num">—</span><span class="num">—</span>
+      </div>`;
+    let outCls = "", outTxt;
+    if (c.out) outTxt = c.outMethod === "cap" ? `out — ${c.strikes} total strikes` : `out — live avg vs ${escapeHtml(c.outBowler || "")}`;
+    else { outCls = " notout"; outTxt = "not out"; }
+    const sr = c.balls ? ((c.runs / c.balls) * 100).toFixed(0) : "—";
+    return `
+      <div class="bat-grid tbl-row">
+        <div>
+          <div class="pname">${escapeHtml(c.name)}${c.ia ? ' <span class="ia-badge">IA</span>' : ""}${c.duck ? ' <span style="font-size:13px">🦆</span>' : ""}</div>
+          <div class="out-line${outCls}">${outTxt}</div>
+        </div>
+        <span class="num strong">${c.runs}</span>
+        <span class="num">${c.balls}</span>
+        <span class="num">${c.strikes}</span>
+        <span class="num">${c.fours}</span>
+        <span class="num">${c.sixes}</span>
+        <span class="num plain">${sr}</span>
+      </div>`;
   }).join("");
 
-  const bowl = prog.bowlerStats.map(b =>
-    `<tr><td class="name">${escapeHtml(b.name)}</td><td>${Math.floor(b.balls / 6)}.${b.balls % 6}</td>
-      <td>${b.runs}</td><td>${b.wickets}</td><td>${b.dots}</td>
-      <td>${b.balls ? (b.runs / (b.balls / 6)).toFixed(1) : "—"}</td></tr>`
-  ).join("") || `<tr><td colspan="6" class="mini">—</td></tr>`;
-
   const shown = inn.fow.slice(0, prog.wickets);
-  const fow = shown.length ? shown.map(f => `${f.score}-${f.wicket} (${escapeHtml(f.batsman)}, ${f.over}.${f.ball})`).join(" · ") : "—";
-  const overs = Math.floor(prog.balls / 6) + "." + (prog.balls % 6);
-  const rr = prog.balls ? (prog.total / (prog.balls / 6)).toFixed(2) : "0.00";
-  const notOut = prog.cards.filter(c => c.batted && !c.out).length;
+  const fow = shown.length
+    ? shown.map(f => `${f.score}&ndash;${f.wicket} (${escapeHtml(f.batsman)}, ${f.over}.${f.ball})`).join(" · ")
+    : "—";
+
+  const bowlRows = prog.bowlerStats.map(b => `
+    <div class="bowl-grid tbl-row">
+      <span class="pname">${escapeHtml(b.name)}</span>
+      <span class="num">${oversStr(b.balls)}</span>
+      <span class="num">${b.runs}</span>
+      <span class="num${b.wickets >= 2 ? " hot" : ""}">${b.wickets}</span>
+      <span class="num">${b.dots}</span>
+      <span class="num plain">${b.balls ? (b.runs / (b.balls / 6)).toFixed(1) : "—"}</span>
+    </div>`).join("") || `<div class="tbl-row" style="font-family:var(--mono);font-size:12px;color:var(--faint)">—</div>`;
 
   return `
-    <div class="sc-title" style="color:${teamColor(inn.team)}">${inn.team} <span class="t">${prog.total}/${prog.wickets} (${overs} ov) · RR ${rr}</span></div>
-    <table class="sc">
-      <thead><tr><th>Batsman</th><th>R</th><th>B</th><th>Strk</th><th>4s</th><th>6s</th><th>SR</th></tr></thead>
-      <tbody>${bat}</tbody>
-    </table>
-    <div class="sc-total"><span>Total <span class="tt">(${prog.wickets} wkt${prog.wickets === 1 ? "" : "s"}, ${overs} ov)</span></span>
-      <b>${prog.total}/${prog.wickets}</b></div>
-    <div class="mini" style="margin:10px 0 4px"><b>Fall of wickets:</b> ${fow}</div>
-    <div class="sc-title" style="margin-top:16px">Bowling <span class="t">${other.team}</span></div>
-    <table class="sc">
-      <thead><tr><th>Bowler</th><th>O</th><th>R</th><th>W</th><th>Dots</th><th>Econ</th></tr></thead>
-      <tbody>${bowl}</tbody>
-    </table>`;
+    <div class="card-head">
+      <span class="tm"><span class="sq10" style="background:${st.sq}"></span>${inn.team}</span>
+      <span class="sc">${prog.total}/${prog.wickets} (${overs} ov) · RR ${rr}${isChase ? ` · chasing ${state.match.target}` : ""}</span>
+    </div>
+    <div class="table-scroll">
+      <div class="bat-grid tbl-cap">
+        <span>BATSMAN</span><span>R</span><span>B</span><span>STRK</span><span>4s</span><span>6s</span><span>SR</span>
+      </div>
+      ${batRows}
+    </div>
+    <div class="total-bar ${st.total}">
+      <span class="tk">TOTAL · ${prog.wickets} WKT${prog.wickets === 1 ? "" : "S"} · ${overs} OV · EXTRAS 0</span>
+      <span class="tv">${prog.total}/${prog.wickets}</span>
+    </div>
+    <div class="fow-line"><b>FALL OF WICKETS&nbsp;&nbsp;</b>${fow}</div>
+    <div class="card-hr"></div>
+    <div class="sec-head"><span class="t">Bowling</span><span class="s">${escapeHtml(other.team)}</span></div>
+    <div class="table-scroll">
+      <div class="bowl-grid tbl-cap">
+        <span>BOWLER</span><span>O</span><span>R</span><span>W</span><span>DOTS</span><span>ECON</span>
+      </div>
+      ${bowlRows}
+    </div>`;
 }
 
-// ---------- worm chart (progressive: only overs bowled so far) ----------
-// Build worm points for an innings up to the played portion.
+// ---------------------------------------------------------------------------
+// run worm (design-style SVG, progressive)
+// ---------------------------------------------------------------------------
 function wormPoints(inn, prog) {
   const pts = [{ o: 0, r: 0 }];
   const completed = Math.floor(prog.balls / 6);
@@ -407,98 +518,92 @@ function renderWormAt(idx) {
   const prog2 = c2 > 0 ? progressiveInnings(inn2, c2) : null;
   const inn1Done = played >= inn1.ballLog.length;
 
-  const W = 640, H = 300, PL = 44, PR = 20, PT = 16, PB = 30;
   const maxOver = m.overs;
-  const maxRuns = Math.max(inn1.total, inn2.total, 20);
-  const x = (o) => PL + (o / maxOver) * (W - PL - PR);
-  const y = (r) => PT + (1 - r / maxRuns) * (H - PT - PB);
+  const raw = Math.max(inn1.total, inn2.total, m.target || 0, 40);
+  const stepR = Math.ceil(raw / 4 / 10) * 10;
+  const maxRuns = stepR * 4;
+  const X = (o) => 20 + (o / maxOver) * 1000;
+  const Y = (r) => 380 - (r / maxRuns) * 342;
 
-  const path = (pts) => pts.map((p, i) => `${i ? "L" : "M"} ${x(p.o)} ${y(p.r)}`).join(" ");
-  const grids = [];
+  const grid = [];
   for (let g = 0; g <= 4; g++) {
-    const rv = Math.round((maxRuns / 4) * g);
-    grids.push(`<line x1="${PL}" y1="${y(rv)}" x2="${W - PR}" y2="${y(rv)}"/><text class="ax" x="${PL - 8}" y="${y(rv) + 3}" text-anchor="end">${rv}</text>`);
+    const rv = stepR * g, y = Y(rv);
+    grid.push(`<line x1="20" y1="${y}" x2="1020" y2="${y}" stroke="${g === 0 ? "#E4DBC6" : "#EDE5D2"}" stroke-width="1"/>`);
+    grid.push(`<text x="8" y="${y + 4}" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="end">${rv}</text>`);
   }
   const xt = [];
-  for (let o = 0; o <= maxOver; o += Math.max(1, Math.round(maxOver / 5))) {
-    xt.push(`<text class="ax" x="${x(o)}" y="${H - 10}" text-anchor="middle">${o}</text>`);
+  const tickStep = Math.max(1, Math.round(maxOver / 5));
+  for (let o = 0; o <= maxOver; o += tickStep) {
+    xt.push(`<text x="${X(o)}" y="402" font-family="IBM Plex Mono" font-size="12" fill="#B4A88F" text-anchor="${o === 0 ? "start" : "middle"}">${o}</text>`);
   }
-  // target line — only appears once the 1st innings is complete
+
   const tgt = inn1Done
-    ? `<line x1="${PL}" y1="${y(inn1.total)}" x2="${W - PR}" y2="${y(inn1.total)}" stroke="var(--ink-3)" stroke-dasharray="4 4" stroke-width="1"/>`
+    ? `<line x1="20" y1="${Y(m.target)}" x2="1020" y2="${Y(m.target)}" stroke="#7C7160" stroke-width="2" stroke-dasharray="7 6" opacity="0.7"/>
+       <text x="1016" y="${Y(m.target) - 10}" font-family="IBM Plex Mono" font-size="11" fill="#7C7160" text-anchor="end">target ${m.target}</text>`
     : "";
 
-  const col1 = teamColor(m.battingFirst), col2 = teamColor(m.battingSecond);
-  // wicket dots — only wickets that have fallen so far
-  const wdots = (inn, prog, col) => inn.fow.slice(0, prog.wickets).map(f => {
-    const ov = f.over + (f.ball / 6);
-    return `<circle cx="${x(ov)}" cy="${y(f.score)}" r="3.5" fill="var(--wicket)" stroke="${col}" stroke-width="1.5"/>`;
-  }).join("");
+  const poly = (pts, color) =>
+    `<polyline points="${pts.map(p => `${X(p.o).toFixed(1)},${Y(p.r).toFixed(1)}`).join(" ")}" fill="none" stroke="${color}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const wdots = (inn, prog, stroke) => inn.fow.slice(0, prog.wickets).map(f =>
+    `<circle cx="${X(f.over + f.ball / 6).toFixed(1)}" cy="${Y(f.score).toFixed(1)}" r="5.5" fill="#C43D0C" stroke="${stroke}" stroke-width="2"/>`).join("");
 
-  const path2 = prog2 ? `<path d="${path(wormPoints(inn2, prog2))}" fill="none" stroke="${col2}" stroke-width="2.5" stroke-linejoin="round"/>` : "";
-  $("wormChart").innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:100%">
-      <g class="grid">${grids.join("")}${xt.join("")}</g>
+  const c1s = ts(m.battingFirst).line, c2s = ts(m.battingSecond).line;
+  $("worm-chart").innerHTML = `
+    <svg viewBox="-45 0 1105 420" style="width:100%;height:auto;display:block">
+      ${grid.join("")}${xt.join("")}
       ${tgt}
-      <path d="${path(wormPoints(inn1, prog1))}" fill="none" stroke="${col1}" stroke-width="2.5" stroke-linejoin="round"/>
-      ${path2}
-      ${wdots(inn1, prog1, col1)}${prog2 ? wdots(inn2, prog2, col2) : ""}
+      ${poly(wormPoints(inn1, prog1), c1s)}
+      ${prog2 ? poly(wormPoints(inn2, prog2), c2s) : ""}
+      ${wdots(inn1, prog1, "#FFFDF6")}${prog2 ? wdots(inn2, prog2, "#211C13") : ""}
     </svg>`;
-  $("wormLegend").innerHTML = `
-    <span><i style="background:${col1}"></i>${m.battingFirst} (1st) — ${prog1.total}/${prog1.wickets}</span>
-    <span><i style="background:${col2}"></i>${m.battingSecond} (2nd) — ${prog2 ? prog2.total + "/" + prog2.wickets : "yet to bat"}</span>
-    <span><i style="background:var(--wicket);width:8px;height:8px;border-radius:50%"></i>wicket</span>
-    ${inn1Done ? `<span><i style="background:var(--ink-3)"></i>target ${m.target}</span>` : ""}`;
+
+  $("worm-legend").innerHTML = `
+    <span class="k" style="letter-spacing:2.5px">CUMULATIVE SCORE BY OVER</span>
+    <span class="spacer"></span>
+    <span class="lg"><span class="sw" style="background:${c1s}"></span>${m.battingFirst} (1st) &mdash; ${prog1.total}/${prog1.wickets}</span>
+    <span class="lg"><span class="sw" style="background:${c2s}"></span>${m.battingSecond} (2nd) &mdash; ${prog2 ? `${prog2.total}/${prog2.wickets}` : "yet to bat"}</span>
+    <span class="lg"><span class="swdot"></span>wicket</span>
+    ${inn1Done ? `<span class="lg"><span class="swdash"></span>target ${m.target}</span>` : ""}`;
 }
 
-// ---------- tabs ----------
+// ---------------------------------------------------------------------------
+// tabs
+// ---------------------------------------------------------------------------
 function switchTab(name) {
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
-  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("show", p.dataset.panel === name));
+  document.querySelectorAll(".cn-tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== name));
 }
 
-// ---------- rules modal ----------
-function showRules() {
-  const m = $("rulesModal");
-  m.classList.remove("hidden");
-  m.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:50;padding:20px";
-  m.innerHTML = `<div class="card" style="max-width:560px;max-height:80vh;overflow:auto" onclick="event.stopPropagation()">
-    <div class="hd">How it works <span class="lineup-toggle" onclick="document.getElementById('rulesModal').classList.add('hidden')">✕ close</span></div>
-    <div class="bd" style="font-size:13px;line-height:1.6;color:var(--ink-2)">
-      <p><b style="color:var(--ink)">Every ball</b> two dice are rolled (unordered). The result is read off the Dice Table, branching on whether the striker's <b>batting rating is &gt; 5</b> and whether they're an <b style="color:var(--aus)">IA</b> (aggressive) batsman.</p>
-      <p><b style="color:var(--ink)">Two currencies:</b> <b style="color:var(--four)">runs</b> (dot/1/2/4/6, and doubles stack to 8 or 12) go to the total; <b style="color:var(--strike)">strikes</b> are the dismissal currency and never reset.</p>
-      <p><b style="color:var(--ink)">Getting out:</b> a batsman falls the instant strikes reach either threshold — the <b>rating cap</b> (= own batting rating) or the <b>live average</b> = floor((batting + current bowler's bowling)/2). A great bowler (low number) drags the average down, so the average usually bites — and a set batsman can even fall the moment a much better bowler comes on.</p>
-      <p><b style="color:var(--ink)">Format:</b> T20, 20 overs, 10 wickets, max 4 overs/bowler. Odd runs rotate strike; ends change each over. Fully deterministic from the seed.</p>
-      <div style="color:var(--ink);font-weight:700;margin:14px 0 6px">Dice Table</div>
-      ${diceTableHtml()}
-    </div></div>`;
-  m.onclick = () => m.classList.add("hidden");
-}
+// ---------------------------------------------------------------------------
+// rules modal (accurate copy + compact dice table straight from the engine)
+// ---------------------------------------------------------------------------
+function openRules() { $("rules-modal").classList.remove("hidden"); }
+function closeRules() { $("rules-modal").classList.add("hidden"); }
 
-// Render the full 21-combination dice table straight from the engine so the
-// modal can never drift from the actual rules being simulated.
-function diceTableHtml() {
-  const rolls = [];
-  for (let a = 1; a <= 6; a++) for (let b = a; b <= 6; b++) rolls.push([a, b]);
+function renderRulesBody() {
   const cell = (pair, rating, ia) => {
     const o = resolveBall(pair, rating, ia);
     const bits = [];
-    if (o.runs) bits.push(`<span style="color:var(--four)">${o.runs}r</span>`);
-    if (o.strikes) bits.push(`<span style="color:var(--strike)">${o.strikes}s</span>`);
-    return bits.length ? bits.join(" ") : `<span style="color:var(--ink-3)">dot</span>`;
+    if (o.runs) bits.push(`<span class="rr">${o.runs}r</span>`);
+    if (o.strikes) bits.push(`<span class="ss">${o.strikes}s</span>`);
+    return bits.length ? bits.join(" + ") : `<span class="dd">dot</span>`;
   };
-  const rows = rolls.map(p => {
-    const ia = window.__diceIA;
-    return `<tr><td style="font-family:var(--mono);color:var(--ink)">${p[0]},${p[1]}</td>
-      <td>${cell(p, 8, ia)}</td><td>${cell(p, 3, ia)}</td></tr>`;
-  }).join("");
-  return `<div style="margin-bottom:6px;font-size:11px">
-      <label style="color:var(--ink-2);cursor:pointer"><input type="checkbox" id="diceIAtoggle" ${window.__diceIA ? "checked" : ""} onchange="window.__diceIA=this.checked;showRules()"> show as IA batsman</label>
-    </div>
-    <table class="sc" style="font-size:12px"><thead><tr><th>Roll</th><th>Rating &gt;5</th><th>Rating ≤5</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="mini" style="margin-top:4px"><span style="color:var(--four)">r</span> = runs · <span style="color:var(--strike)">s</span> = strikes</div>`;
+  const rows = [];
+  for (let a = 1; a <= 6; a++) for (let b = a; b <= 6; b++) {
+    const base = cell([a, b], 8, false), lo = cell([a, b], 3, false), iaHi = cell([a, b], 8, true);
+    rows.push(`<tr><td>${a},${b}</td><td>${base}</td><td>${lo}</td><td>${iaHi !== base ? iaHi : '<span class="dd">—</span>'}</td></tr>`);
+  }
+  $("rules-body").innerHTML = `
+    <p>Every ball is a roll of <b>two dice</b>. The unordered pair is looked up in the Dice Table, which branches on the striker&rsquo;s <b>batting rating</b> (&gt;5 or &le;5) and their <b>IA</b> (aggression) trait.</p>
+    <p><b>Two currencies.</b> Runs go on the board; <b style="color:var(--orange)">strikes</b> stack on the batsman for the whole innings and never reset.</p>
+    <p><b>Two ways out.</b> Reach your own batting rating in total strikes (&ldquo;out &mdash; N total strikes&rdquo;), or cross the <b>live average</b> &mdash; &lfloor;(batting&nbsp;+&nbsp;bowler&rsquo;s rating)&thinsp;/&thinsp;2&rfloor; against whoever is bowling right now. Great bowlers drag the average down; a set batsman can fall the instant one comes on.</p>
+    <p><b>Phases matter.</b> Pace attacks the powerplay, spin squeezes the middle overs, and scoring surges again at the death.</p>
+    <p class="rules-note">Seeds are random &mdash; every simulation is a fresh match. Replay re-runs the last one identically.</p>
+    <table class="dice-tbl">
+      <thead><tr><th>ROLL</th><th>RATING &gt;5</th><th>RATING &le;5</th><th>IA (&gt;5)</th></tr></thead>
+      <tbody>${rows.join("")}</tbody>
+    </table>
+    <p class="rules-note">r = runs &middot; s = strikes &middot; base table shown; T20/ODI balance profiles and the powerplay/death boost adjust some cells (see tactics.md).</p>`;
 }
-
-function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
 init();

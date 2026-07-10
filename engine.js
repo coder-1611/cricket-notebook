@@ -291,11 +291,22 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
         c.duck = c.runs === 0;
         wickets++; overWk++; creditBowlerWicket(bowlerIdx);
         fow.push({ wicket: wickets, score: total, over: over, ball: 0, batsman: c.name, note: "new bowler on" });
+        // full crease snapshot so the UI can render this event like any ball
+        const partnerIdx = (cIdx === strikerIdx) ? nonStrikerIdx : strikerIdx;
+        const partner = (partnerIdx != null && !cards[partnerIdx].out) ? cards[partnerIdx] : null;
+        const pdi = partner ? dismissalInfo(partner.battingRating, bowlingRating, partner.strikes, bonus) : null;
         ballLog.push({
           inningNo, over: over + 1, ballInOver: 0, striker: c.name,
-          bowler: fieldingTeam.lineup[bowlerIdx].name, pair: null, iaApplied: false,
+          bowler: fieldingTeam.lineup[bowlerIdx].name, bowlerRating: bowlingRating,
+          bowlerType: fieldingTeam.lineup[bowlerIdx].type || "pace", phase: phaseName,
+          pair: null, iaApplied: false,
           branch: null, label: "Bowler change", runs: 0, strikes: 0, totalStrikes: c.strikes,
+          capThreshold: di.cap, avgThreshold: di.avg, threshold: di.threshold,
           wicket: true, outMethod: "average", teamScore: total, wickets,
+          strikerRuns: c.runs, strikerBalls: c.balls, strikerIA: c.ia,
+          nonStriker: partner ? partner.name : null, nonStrikerRuns: partner ? partner.runs : null,
+          nonStrikerBalls: partner ? partner.balls : null, nonStrikerIA: partner ? partner.ia : false,
+          nonStrikerStrikes: partner ? partner.strikes : null, nonStrikerThreshold: pdi ? pdi.threshold : null,
           commentary: `${fieldingTeam.lineup[bowlerIdx].name} comes on and ${c.name} is gone before facing — the live average dropped to ${di.threshold}. WICKET!`
         });
         if (cIdx === strikerIdx) {
