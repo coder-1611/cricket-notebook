@@ -158,7 +158,12 @@
       animChain = animChain.then(async () => {
         const isBall = a.a === "ball" && (match.stage === "ball");
         const ok = match.apply(a);
-        if (ok && isBall && match.lastEvent) await animateDelivery(match.lastEvent);
+        if (ok && isBall && match.lastEvent) {
+          await animateDelivery(match.lastEvent);
+          // over done and the innings goes on → the end-of-over card
+          if (match.lastEvent.ballInOver === 6 && (match.stage === "bowler" || match.stage === "nextbat"))
+            await showOverBreak();
+        }
         refreshStage();
       });
     }
@@ -321,6 +326,9 @@
     if (match.stage === "ball") {
       $("turn-main").textContent = iBat ? "YOUR TURN — FACE THE BALL" : `${pname(batter).toUpperCase()} IS BATTING`;
       $("turn-sub").textContent = iBat ? "click when the button is charged" : "they click, you watch — pick your moment at the next over";
+    } else if (match.stage === "nextbat") {
+      $("turn-main").textContent = iBat ? "WICKET — SEND IN YOUR NEXT BATTER" : `${pname(batter).toUpperCase()} PICKS THE NEXT BATTER`;
+      $("turn-sub").textContent = iBat ? "who walks out to the middle?" : "a new batsman is on his way…";
     } else { // bowler
       $("turn-main").textContent = fielder === my.role ? "YOUR CALL — PICK A BOWLER" : `${pname(fielder).toUpperCase()} IS SETTING THE FIELD`;
       $("turn-sub").textContent = fielder === my.role ? "who takes this over?" : "waiting for their bowling change…";
@@ -371,13 +379,30 @@
     renderSituation(inn, fmt);
     renderFaceButton(iBat);
     renderBowlModal();
+    renderBatModal();
   }
 
   function renderFeed(inn) {
     const f = $("feed"); f.innerHTML = "";
-    const evs = inn.events.slice(-40).reverse();
-    for (const e of evs) {
+    // interleave end-of-over divider rows with the balls
+    const items = [];
+    for (const e of inn.events) {
+      items.push({ t: "ball", e });
+      if (e.ballInOver === 6) {
+        const os = inn.overSummaries.find(o => o.over === e.over);
+        if (os) items.push({ t: "over", os });
+      }
+    }
+    for (const it of items.slice(-48).reverse()) {
       const d = document.createElement("div");
+      if (it.t === "over") {
+        const os = it.os;
+        d.className = "fitem ob";
+        d.innerHTML = `<span>END OF OVER ${os.over}</span><b>${os.total}/${os.wkts}</b><span>RR ${(os.total / os.over).toFixed(2)}</span><span>${os.runs} off it (${esc(os.bowler)})</span>`;
+        f.appendChild(d);
+        continue;
+      }
+      const e = it.e;
       d.className = "fitem" + (e.wicket ? " wicket" : "");
       let badge, btxt;
       if (e.wicket) { badge = "wkt"; btxt = "OUT"; }
@@ -444,8 +469,9 @@
       stopCharge();
       btn.disabled = true; db.disabled = true; btn.classList.remove("ready");
       btn.style.setProperty("--chg", 0);
-      $("face-label").textContent = match.stage === "ball" ? "WATCHING" : "OVER BREAK";
-      $("face-sub").textContent = match.stage === "ball" ? `${pname(match.battingRole)} on strike` : "bowler being picked";
+      $("face-label").textContent = match.stage === "ball" ? "WATCHING" : match.stage === "nextbat" ? "NEW BATTER" : "OVER BREAK";
+      $("face-sub").textContent = match.stage === "ball" ? `${pname(match.battingRole)} on strike`
+        : match.stage === "nextbat" ? "wicket down" : "bowler being picked";
       $("await-line").textContent = "";
       $("action-cap").textContent = "NEXT BALL";
       return;
@@ -511,6 +537,50 @@
     });
   }
 
+  // ---------- next batter pick modal ----------
+  function renderBatModal() {
+    const modal = $("bat-modal");
+    const mine = match.stage === "nextbat" && match.battingRole === my.role;
+    modal.classList.toggle("on", mine);
+    if (!mine) return;
+    const inn = match.cur;
+    const list = $("bat-list"); list.innerHTML = "";
+    // batting-order sequence, but every remaining batsman is available
+    match.legalBatters().map(i => ({ i, c: inn.cards[i] })).forEach(({ i, c }) => {
+      const d = document.createElement("button");
+      d.className = "bowl-opt";
+      d.innerHTML = `
+        <span class="ty">#${c.order + 1}</span>
+        <span class="nm">${esc(c.name)}${c.keeper ? " 🧤" : ""}${c.ia ? " ⚡" : ""}</span>
+        <span class="fig">BAT ${c.battingRating}</span>`;
+      d.onclick = () => { modal.classList.remove("on"); sendAction({ a: "nextbat", x: i }); };
+      list.appendChild(d);
+    });
+  }
+
+  // ---------- end-of-over interstitial ----------
+  function showOverBreak() {
+    const inn = match.cur;
+    if (!inn || !inn.overSummaries.length) return Promise.resolve();
+    const os = inn.overSummaries[inn.overSummaries.length - 1];
+    return new Promise(res => {
+      $("ob-over").textContent = os.over;
+      $("ob-score").textContent = `${os.total}/${os.wkts}`;
+      const rr = (os.total / os.over).toFixed(2);
+      let line = `run rate ${rr} · ${os.runs} off the over (${os.bowler})`;
+      if (inn.target != null) {
+        const need = inn.target - os.total, ballsLeft = match.cfg.format.overs * 6 - os.over * 6;
+        line += need > 0 ? ` · need ${need} off ${ballsLeft}` : "";
+      }
+      $("ob-stats").textContent = line;
+      const D = $("over-break");
+      D.classList.add("on");
+      const close = () => { D.classList.remove("on"); D.onclick = null; res(); };
+      D.onclick = close;         // tap to move on
+      setTimeout(close, 2100);   // …or it clears itself
+    });
+  }
+
   // ---------- delivery animation ----------
   const RUNUP_LINES = [
     "THE BOWLER TURNS AT THE TOP OF HIS MARK…",
@@ -526,7 +596,6 @@
         : ev.intent === "def" ? "BAT STRAIGHT, SOFT HANDS — HERE HE COMES…"
         : RUNUP_LINES[(ev.over * 7 + ev.ballInOver) % RUNUP_LINES.length];
       $("dl-line").textContent = line;
-      $("dl-d1").textContent = ev.pair[0]; $("dl-d2").textContent = ev.pair[1];
       const r = $("dl-result"), sub = $("dl-sub");
       let cls = "", txt, subtxt, shake = false, long = false;
       if (ev.wicket) {

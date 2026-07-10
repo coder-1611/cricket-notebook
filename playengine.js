@@ -12,6 +12,9 @@
 // Actions:
 //   { a: "choice", v: "bat"|"bowl" }        — toss winner's call
 //   { a: "bowler", x: <xi slot> }           — fielding side sets the over's bowler
+//   { a: "nextbat", x: <xi slot> }          — batting side sends in the next
+//                                             batsman after a wicket (any not-out
+//                                             player who hasn't batted yet)
 //   { a: "ball", i: "att"|"def" }           — batting side faces one delivery,
 //                                             choosing to ATTACK or DEFEND it:
 //     att — boundary boost applied in EVERY phase (slog) but any strike outcome
@@ -27,8 +30,9 @@
 
   function batCard(p, order) {
     return {
-      name: p.name, battingRating: p.batting, ia: !!p.ia, order,
+      name: p.name, battingRating: p.batting, ia: !!p.ia, keeper: !!p.keeper, order,
       runs: 0, balls: 0, fours: 0, sixes: 0, strikes: 0, byBowler: {},
+      arrived: false, // has come to the crease (openers start true)
       out: false, outMethod: null, outBowler: null, duck: false
     };
   }
@@ -61,10 +65,11 @@
     m.turn = function () {       // whose click is needed right now
       if (m.stage === "toss") return m.tossWinner;
       if (m.stage === "bowler") return m.fieldingRole;
-      if (m.stage === "ball" || m.stage === "innings-break") return m.battingRole;
+      if (m.stage === "ball" || m.stage === "nextbat" || m.stage === "innings-break") return m.battingRole;
       return null;
     };
     m.legalBowlers = function () { return m.cur ? legalBowlers(m) : []; };
+    m.legalBatters = function () { return m.cur ? legalBatters(m) : []; };
     return m;
   }
 
@@ -80,7 +85,7 @@
         slot: i, name: p.name, bowling: p.bowling, type: p.type || "pace", keeper: !!p.keeper,
         overs: 0, balls: 0, runs: 0, wickets: 0, maidens: 0
       })),
-      strikerIdx: 0, nonStrikerIdx: 1, nextBat: 2,
+      strikerIdx: 0, nonStrikerIdx: 1,
       total: 0, wickets: 0, ballsBowled: 0,
       over: 0,                     // 0-based over currently being bowled
       ballInOver: 0,
@@ -100,11 +105,18 @@
     return list.map(b => b.slot);
   }
 
+  // anyone not out who hasn't come to the crease yet can be sent in next
+  function legalBatters(m) {
+    return m.cur.cards.map((c, i) => (!c.out && !c.arrived) ? i : -1).filter(i => i >= 0);
+  }
+
   function startInnings(m, battingRole, target) {
     m.inningNo++;
     m.battingRole = battingRole;
     m.fieldingRole = battingRole === "p1" ? "p2" : "p1";
     m.cur = newInnings(m, battingRole, target);
+    m.cur.cards[0].arrived = true;
+    m.cur.cards[1].arrived = true;
     m.innings.push(m.cur);
     m.stage = "bowler";
   }
@@ -134,6 +146,18 @@
     if (m.stage === "ball") {
       if (action.a !== "ball") return false;
       playBall(m, action.i === "att" || action.i === "def" ? action.i : null);
+      return true;
+    }
+
+    if (m.stage === "nextbat") {
+      if (action.a !== "nextbat") return false;
+      const legal = legalBatters(m);
+      const idx = legal.includes(action.x) ? action.x : legal[0]; // never desync on an illegal pick
+      const inn = m.cur;
+      inn.cards[idx].arrived = true;
+      if (inn.strikerIdx == null) inn.strikerIdx = idx;
+      else inn.nonStrikerIdx = idx;
+      m.stage = inn.bowlerSlot == null ? "bowler" : "ball";
       return true;
     }
 
@@ -253,9 +277,11 @@
     // strike rotation on odd runs
     if (res.runs % 2 === 1) { const t = inn.strikerIdx; inn.strikerIdx = inn.nonStrikerIdx; inn.nonStrikerIdx = t; }
 
-    let ended = false;
+    let ended = false, vacancy = false;
     if (wicket) {
-      if (inn.nextBat <= 10) { inn.strikerIdx = inn.nextBat++; }
+      // the crease slot is vacated; the batting player CHOOSES who walks in next
+      inn.strikerIdx = null;
+      if (legalBatters(m).length && inn.wickets < 10) vacancy = true;
       else ended = true;
     }
     if (inn.wickets >= 10) ended = true;
@@ -269,13 +295,17 @@
       inn.prevBowlerSlot = inn.bowlerSlot;
       inn.bowlerSlot = null;
       inn.over++;
-      const t = inn.strikerIdx; inn.strikerIdx = inn.nonStrikerIdx; inn.nonStrikerIdx = t; // change ends
+      const t = inn.strikerIdx; inn.strikerIdx = inn.nonStrikerIdx; inn.nonStrikerIdx = t; // change ends (a vacant slot swaps too)
       if (inn.over >= fmt.overs) ended = true;
       else m.stage = "bowler";
     }
     if (ended) {
       if (inn.ballInOver >= 1 && inn.bowlerSlot != null) bowler.overs += inn.ballInOver >= 6 ? 1 : 0;
       endInnings(m);
+    } else if (vacancy) {
+      // batsman pick comes first; the bowler pick (if the over also ended)
+      // follows once the new batter is in
+      m.stage = "nextbat";
     }
   }
 
