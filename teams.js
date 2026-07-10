@@ -58,6 +58,19 @@ const FORMATS = {
   }
 };
 
+// PLAY-mode-only formats (kept out of FORMATS so the sim dashboard stays T20/ODI).
+// T10 borrows the T20 scoring profile (see playengine.js).
+const FORMATS_PLAY = Object.assign({}, FORMATS, {
+  T10: {
+    key: "T10", label: "T10 — 10 overs", overs: 10, maxOvers: 2, deathReserve: 1,
+    phases: [
+      { name: "Powerplay", to: 3,  prefer: "pace" },
+      { name: "Middle",    to: 7,  prefer: "spin" },
+      { name: "Death",     to: 10, prefer: "pace" }
+    ]
+  }
+});
+
 const STADIUMS = [
   { id: "delhi",     name: "Arun Jaitley Stadium",     city: "Delhi" },
   { id: "mumbai",    name: "Wankhede Stadium",         city: "Mumbai" },
@@ -68,5 +81,5 @@ const STADIUMS = [
 ];
 
 // Work in both the browser (globals for app.js) and Node (require for test.js).
-if (typeof window !== "undefined") { window.TEAMS = TEAMS; window.STADIUMS = STADIUMS; window.FORMATS = FORMATS; }
-if (typeof module !== "undefined") { module.exports = { TEAMS, STADIUMS, FORMATS, India: TEAMS.India, Australia: TEAMS.Australia }; }
+if (typeof window !== "undefined") { window.TEAMS = TEAMS; window.STADIUMS = STADIUMS; window.FORMATS = FORMATS; window.FORMATS_PLAY = FORMATS_PLAY; }
+if (typeof module !== "undefined") { module.exports = { TEAMS, STADIUMS, FORMATS, FORMATS_PLAY, India: TEAMS.India, Australia: TEAMS.Australia }; }

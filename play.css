@@ -204,6 +204,19 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:14p
 #face-btn.ready:not(:disabled){animation:readyPulse 1.6s ease-in-out infinite}
 @keyframes readyPulse{0%,100%{filter:drop-shadow(0 0 0px var(--me))}50%{filter:drop-shadow(0 0 14px var(--me))}}
 .await-line{font-family:"Newsreader",serif;font-style:italic;font-size:16px;color:var(--muted);min-height:22px}
+#def-btn{
+  border:2px solid var(--ink);background:var(--card);color:var(--ink);
+  font-weight:800;font-size:15px;letter-spacing:1px;padding:12px 26px;border-radius:999px;
+  box-shadow:3px 3px 0 #211C1355;transition:transform .1s;
+}
+#def-btn:not(:disabled):hover{transform:translate(-1px,-1px);background:var(--ink);color:var(--card)}
+#def-btn:not(:disabled):active{transform:translate(2px,2px);box-shadow:none}
+#def-btn:disabled{opacity:.35;cursor:default}
+.intent-hint{font-family:"Newsreader",serif;font-size:13.5px;line-height:1.5;color:var(--muted);max-width:270px}
+.how-out{
+  font-family:"Newsreader",serif;font-style:italic;font-size:13.5px;color:var(--muted);
+  padding:0 16px 14px;line-height:1.45;
+}
 
 /* ---------- commentary feed ---------- */
 .feed{display:flex;flex-direction:column;gap:0;max-height:420px;overflow-y:auto}

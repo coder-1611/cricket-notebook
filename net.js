@@ -58,6 +58,18 @@
   function setXI(code, role, orderIdx) { return req("PUT", `/rooms/${code}/xi/${role}`, orderIdx); }
   function pushAction(code, action) { return req("POST", `/rooms/${code}/actions`, action); }
 
+  // Rematch: clone players + XIs into a fresh room (new seed, no actions), then
+  // point the old room at it — both clients see the pointer and migrate.
+  async function rematchRoom(oldCode, oldDoc) {
+    const code = makeCode();
+    await req("PUT", `/rooms/${code}`, {
+      v: 1, created: Date.now(), seed: (Math.random() * 0xFFFFFFFF) >>> 0,
+      format: oldDoc.format, players: oldDoc.players, xi: oldDoc.xi, rematchOf: oldCode
+    });
+    await req("PUT", `/rooms/${oldCode}/rematch`, code);
+    return code;
+  }
+
   function sortedActions(doc) {
     if (!doc || !doc.actions) return [];
     return Object.keys(doc.actions).sort().map(k => doc.actions[k]); // push IDs are chronological
@@ -85,11 +97,11 @@
     function startSSE() {
       es = new EventSource(`${DB}/rooms/${code}.json`);
       const handle = e => {
-        try {
-          const { path, data } = JSON.parse(e.data);
-          applyPatch(path, data);
-          onDoc(doc);
-        } catch (err) { /* keep-alive frames etc. */ }
+        let msg;
+        try { msg = JSON.parse(e.data); } catch (err) { return; } // keep-alive frames
+        if (!msg || typeof msg !== "object") return;
+        applyPatch(msg.path, msg.data);
+        onDoc(doc); // let app errors surface — never swallow them here
       };
       es.addEventListener("put", handle);
       es.addEventListener("patch", handle);
@@ -109,7 +121,7 @@
     return { stop() { stopped = true; if (es) es.close(); if (pollTimer) clearInterval(pollTimer); } };
   }
 
-  const api = { createRoom, joinRoom, setXI, pushAction, sortedActions, watchRoom };
+  const api = { createRoom, joinRoom, setXI, pushAction, sortedActions, watchRoom, rematchRoom };
   if (typeof window !== "undefined") root.NET = api;
   if (typeof module !== "undefined") module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

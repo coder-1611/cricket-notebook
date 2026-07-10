@@ -10,15 +10,20 @@
 // ever sent over the wire.
 //
 // Actions:
-//   { a: "choice", v: "bat"|"bowl" }   — toss winner's call
-//   { a: "bowler", x: <xi slot> }      — fielding side sets the over's bowler
-//   { a: "ball" }                      — batting side faces one delivery
+//   { a: "choice", v: "bat"|"bowl" }        — toss winner's call
+//   { a: "bowler", x: <xi slot> }           — fielding side sets the over's bowler
+//   { a: "ball", i: "att"|"def" }           — batting side faces one delivery,
+//                                             choosing to ATTACK or DEFEND it:
+//     att — boundary boost applied in EVERY phase (slog) but any strike outcome
+//           lands one extra strike (risk to reward);
+//     def — runs capped at 2 (no boundaries) but one strike soaked off the ball
+//           (see off the pressure).
 // ============================================================================
 (function (root) {
   // engine.js primitives (globals in browser, require() in Node/tests)
   const E = (typeof module !== "undefined" && typeof require !== "undefined")
     ? require("./engine.js")
-    : { resolveBall: root.resolveBall, applyProfile: root.applyProfile, dismissalInfo: root.dismissalInfo, mulberry32: root.mulberry32, SCORING_PROFILES: root.SCORING_PROFILES, phaseFor: root.phaseFor };
+    : { resolveBall: root.resolveBall, applyProfile: root.applyProfile, dismissalInfo: root.dismissalInfo, mulberry32: root.mulberry32, SCORING_PROFILES: root.SCORING_PROFILES, phaseFor: root.phaseFor, labelFor: root.labelFor };
 
   function batCard(p, order) {
     return {
@@ -36,7 +41,8 @@
   function createPlayMatch(cfg) {
     const rng = E.mulberry32(cfg.seed >>> 0);
     const tossWinner = rng() < 0.5 ? "p1" : "p2";
-    const profile = E.SCORING_PROFILES[cfg.format.key];
+    // PLAY-only short formats (T10) borrow the T20 balance profile
+    const profile = E.SCORING_PROFILES[cfg.format.key] || E.SCORING_PROFILES.T20;
     const bonus = profile ? (profile.thresholdBonus || 0) : 0;
 
     const m = {
@@ -127,7 +133,7 @@
 
     if (m.stage === "ball") {
       if (action.a !== "ball") return false;
-      playBall(m);
+      playBall(m, action.i === "att" || action.i === "def" ? action.i : null);
       return true;
     }
 
@@ -163,7 +169,7 @@
     }
   }
 
-  function playBall(m) {
+  function playBall(m, intent) {
     const inn = m.cur, fmt = m.cfg.format;
     const striker = inn.cards[inn.strikerIdx];
     const bowler = inn.bowlers[inn.bowlerSlot];
@@ -172,15 +178,33 @@
     let d1, d2, res, compound = null;
 
     if (inn.pendingHit) {
+      // second half of a compound is already in flight — intent doesn't apply
       d1 = inn.pendingHit.pair[0]; d2 = inn.pendingHit.pair[1];
       res = { runs: inn.pendingHit.runs, strikes: 0, label: inn.pendingHit.kind, big: true, iaApplied: false, branch: inn.pendingHit.branch };
       compound = { part: "second", toOther: striker.name !== inn.pendingHit.fromStriker };
       inn.pendingHit = null;
+      intent = null;
     } else {
       d1 = 1 + Math.floor(m.rng() * 6); d2 = 1 + Math.floor(m.rng() * 6);
+      // ATTACK slogs every ball: the boost table is always on AND rotation turns
+      // into boundaries (1 -> 2, 2 -> 4) — but any ball that carries strikes
+      // lands ONE MORE. High ceiling, real risk.
+      const effPhase = intent === "att" ? "Death" : phaseName;
       res = E.applyProfile(E.resolveBall([d1, d2], striker.battingRating, striker.ia),
-        [d1, d2], striker.battingRating > 5, striker.ia, m.profile, phaseName);
-      if (!lastBallOfInnings && (res.label === "TWO SIXES" || res.label === "TWO FOURS")) {
+        [d1, d2], striker.battingRating > 5, striker.ia, m.profile, effPhase);
+      if (intent === "att") {
+        let r = res.runs === 1 ? 2 : res.runs === 2 ? 4 : res.runs;
+        let s = res.strikes > 0 ? res.strikes + 1 : 0;
+        res = { runs: r, strikes: s, label: E.labelFor(r, s), big: r >= 4, iaApplied: res.iaApplied, branch: res.branch };
+      }
+      // DEFEND blocks it out: never more than 2 off the bat, and a heavy ball
+      // (2+ strikes) is partly seen off — but a single strike still sticks, so
+      // even a blocker's total keeps creeping toward the cap.
+      if (intent === "def") {
+        const r = Math.min(res.runs, 2), s = res.strikes >= 2 ? res.strikes - 1 : res.strikes;
+        res = { runs: r, strikes: s, label: E.labelFor(r, s), big: false, iaApplied: res.iaApplied, branch: res.branch };
+      }
+      if (!lastBallOfInnings && (res.label === "TWO SIXES" || res.label === "TWO FOURS") && res.runs >= 8) {
         const kind = res.label === "TWO SIXES" ? "SIX" : "FOUR";
         const half = kind === "SIX" ? 6 : 4;
         inn.pendingHit = { runs: half, kind, pair: [d1, d2], branch: res.branch, fromStriker: striker.name };
@@ -215,7 +239,7 @@
       inningNo: inn.inningNo, over: inn.over + 1, ballInOver: inn.ballInOver,
       striker: striker.name, bowler: bowler.name, bowlerType: bowler.type, phase: phaseName,
       pair: [d1, d2], label: res.label, runs: res.runs, strikes: res.strikes, big: res.big,
-      iaApplied: res.iaApplied, compound: compound ? compound.part : null,
+      intent, iaApplied: res.iaApplied, compound: compound ? compound.part : null,
       compoundToOther: compound ? compound.toOther : false,
       totalStrikes: striker.strikes, capThreshold: di.cap,
       bowlerStrikes, avgThreshold: di.avg,

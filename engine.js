@@ -451,8 +451,8 @@ function makeCommentary(res, striker, di, wicket, pair) {
   const who = striker.name;
   if (wicket) {
     const how = di.which === "cap"
-      ? `reaches ${striker.strikes} TOTAL strikes — out by total strikes`
-      : `has now taken ${di.bowlerStrikes} strikes from this bowler — the live average of ${di.avg} is up`;
+      ? `reaches ${striker.strikes} TOTAL strike${striker.strikes === 1 ? "" : "s"} — out by total strikes`
+      : `has now taken ${di.bowlerStrikes} strike${di.bowlerStrikes === 1 ? "" : "s"} from this bowler — the live average of ${di.avg} is up`;
     return `${dice} OUT! ${who} ${how}. ${striker.runs === 0 ? "Gone for a DUCK." : `Departs for ${striker.runs}.`}`;
   }
   if (res.big && res.runs >= 12) return `${dice} MAXIMUM! ${who} clears the ropes twice — ${res.runs} runs!`;

@@ -8,7 +8,7 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id);
-  const CHARGE_MS = 2600;
+  const CHARGE_MS = 1500;
 
   // ---------- local session ----------
   let my = null;            // { code, role, name }
@@ -112,16 +112,29 @@
       name: pname(role), country: pcountry(role),
       xi: doc.xi[role].map(i => playerOf(role, i))
     });
-    match = createPlayMatch({ seed: doc.seed, format: FORMATS[doc.format], p1: mk("p1"), p2: mk("p2") });
+    match = createPlayMatch({ seed: doc.seed, format: FORMATS_PLAY[doc.format], p1: mk("p1"), p2: mk("p2") });
     applied = 0;
   }
 
   function route() {
     if (!doc) return;
+    // a rematch room was created from this one — both players migrate
+    if (doc.rematch && match && match.stage === "done") {
+      my = { code: doc.rematch, role: my.role, name: my.name }; save();
+      match = null; applied = 0; tossShown = false; xiSubmitted = true; chargedAt = 0;
+      animChain = Promise.resolve();
+      $("rematch-btn").disabled = false;
+      $("rematch-wait").style.display = "none";
+      toast("Rematch on — new toss!");
+      startWatching();
+      return;
+    }
     if (!doc.players || !doc.players.p2) { renderLobby(); show("s-lobby"); setTurnColor(null); return; }
     if (!doc.xi || !doc.xi[my.role]) {
-      if (!xiSubmitted) { enterSquadPick(); }
-      return; // squad/order screens manage themselves
+      // xiSubmitted but not yet echoed back: hold on the waiting screen
+      if (!xiSubmitted) enterSquadPick();
+      else { $("waitxi-line").textContent = "locking in your XI…"; show("s-waitxi"); }
+      return;
     }
     if (!doc.xi[oppRole(my.role)]) {
       $("waitxi-line").textContent = `waiting for ${pname(oppRole(my.role))} to pick their XI…`;
@@ -207,7 +220,12 @@
     $("squad-warn").textContent = warn;
     $("squad-next").disabled = !(picks.length === 11 && keeps >= 1);
   }
-  $("squad-next").onclick = () => { order = picks.slice(); renderOrder(); show("s-order"); };
+  $("squad-next").onclick = () => {
+    // sensible starting order: best batsmen at the top (player can still rearrange)
+    const country = pcountry(my.role);
+    order = picks.slice().sort((a, b) => SQUADS[country][b].batting - SQUADS[country][a].batting);
+    renderOrder(); show("s-order");
+  };
   $("order-back").onclick = () => { renderSquad(); show("s-squad"); };
 
   function renderOrder() {
@@ -235,11 +253,15 @@
   }
   $("order-confirm").onclick = async () => {
     loader(true, "LOCKING IN YOUR XI…");
+    xiSubmitted = true; // set BEFORE the write: the SSE echo can beat the fetch
     try {
       await NET.setXI(my.code, my.role, order);
-      xiSubmitted = true;
-      show("s-waitxi"); setTurnColor(oppRole(my.role));
-    } catch (e) { toast("Couldn't save your XI — try again"); }
+      setTurnColor(oppRole(my.role));
+      route(); // never show() directly — the SSE echo may already have advanced us
+    } catch (e) {
+      xiSubmitted = false;
+      toast("Couldn't save your XI — try again");
+    }
     loader(false);
   };
 
@@ -371,23 +393,24 @@
     }
   }
 
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
   function commentaryFor(e) {
-    const dice = `[${e.pair[0]}-${e.pair[1]}]`;
+    const iv = e.intent === "att" ? "Going hard — " : e.intent === "def" ? "Playing it safe — " : "";
     if (e.wicket) {
       return e.outMethod === "cap"
-        ? `${dice} OUT! ${e.striker} runs out of road — ${e.totalStrikes} total strikes. ${e.strikerRuns === 0 ? "A duck!" : `Gone for ${e.strikerRuns}.`}`
-        : `${dice} OUT! ${e.bowler} has worked ${e.striker} over — ${e.bowlerStrikes} strikes of his own. WICKET!`;
+        ? `OUT! ${e.striker} runs out of road — ${plural(e.totalStrikes, "total strike")}. ${e.strikerRuns === 0 ? "A duck!" : `Gone for ${e.strikerRuns}.`}`
+        : `OUT! ${e.bowler} has worked ${e.striker} over — ${plural(e.bowlerStrikes, "strike")} of his own. WICKET!`;
     }
-    if (e.compound === "first") return `${dice} ${e.label}! First blow of a double — one more coming…`;
+    if (e.compound === "first") return `${e.label}! First blow of a double — one more coming…`;
     if (e.compound === "second") return e.compoundToOther
       ? `${e.label} again! New over, new end — ${e.striker} banks the second one.`
       : `${e.label} again! ${e.striker} doubles up.`;
-    if (e.runs >= 6) return `${dice} SIX! ${e.striker} goes all the way.`;
-    if (e.runs >= 4) return `${dice} FOUR! Crunched by ${e.striker}.${e.strikes ? " But a strike too…" : ""}`;
-    if (e.strikes >= 2) return `${dice} Big pressure — ${e.strikes} strikes on ${e.striker} (${e.totalStrikes}/${e.capThreshold}).`;
-    if (e.strikes === 1) return `${dice} Beaten! Strike on ${e.striker} (${e.totalStrikes}/${e.capThreshold}, ${e.bowlerStrikes} to ${e.bowler}).`;
-    if (e.runs === 0) return `${dice} Dot ball — good tight line.`;
-    return `${dice} ${e.runs === 1 ? "Quick single" : e.runs + " runs"} for ${e.striker}.`;
+    if (e.runs >= 6) return `${iv}SIX! ${e.striker} goes all the way.`;
+    if (e.runs >= 4) return `${iv}FOUR! Crunched by ${e.striker}.${e.strikes ? " But a strike too…" : ""}`;
+    if (e.strikes >= 2) return `${iv}big pressure — ${plural(e.strikes, "strike")} on ${e.striker} (${e.totalStrikes}/${e.capThreshold}).`;
+    if (e.strikes === 1) return `${iv}beaten! A strike on ${e.striker} (${e.totalStrikes}/${e.capThreshold} total, ${e.bowlerStrikes} to ${e.bowler}).`;
+    if (e.runs === 0) return `${iv}dot ball — good tight line.`;
+    return `${iv}${e.runs === 1 ? "quick single" : e.runs + " runs"} for ${e.striker}.`;
   }
 
   function renderSituation(inn, fmt) {
@@ -406,13 +429,13 @@
     $("situation").innerHTML = txt;
   }
 
-  // ---------- FACE BALL button ----------
+  // ---------- ATTACK / DEFEND buttons (shared charge) ----------
   function renderFaceButton(iBat) {
-    const btn = $("face-btn");
+    const btn = $("face-btn"), db = $("def-btn");
     const myBall = match.stage === "ball" && iBat;
     if (!myBall) {
       stopCharge();
-      btn.disabled = true; btn.classList.remove("ready");
+      btn.disabled = true; db.disabled = true; btn.classList.remove("ready");
       btn.style.setProperty("--chg", 0);
       $("face-label").textContent = match.stage === "ball" ? "WATCHING" : "OVER BREAK";
       $("face-sub").textContent = match.stage === "ball" ? `${pname(match.battingRole)} on strike` : "bowler being picked";
@@ -420,14 +443,14 @@
       $("action-cap").textContent = "NEXT BALL";
       return;
     }
-    $("action-cap").textContent = "YOU'RE ON STRIKE";
+    $("action-cap").textContent = "YOU'RE ON STRIKE — YOUR CALL";
     if (!chargeTimer && Date.now() >= chargedAt) armCharged();
     else if (!chargeTimer) startCharge();
   }
   function startCharge() {
     const btn = $("face-btn");
-    btn.disabled = true; btn.classList.remove("ready");
-    $("face-label").textContent = "FACE BALL";
+    btn.disabled = true; $("def-btn").disabled = true; btn.classList.remove("ready");
+    $("face-label").textContent = "ATTACK";
     const t0 = Date.now();
     chargedAt = t0 + CHARGE_MS;
     (function tick() {
@@ -442,19 +465,21 @@
     const btn = $("face-btn");
     if (!(match && match.stage === "ball" && match.battingRole === my.role)) return;
     btn.style.setProperty("--chg", 1);
-    btn.disabled = false; btn.classList.add("ready");
-    $("face-label").textContent = "FACE BALL";
-    $("face-sub").textContent = "he's at the top of his mark";
+    btn.disabled = false; $("def-btn").disabled = false; btn.classList.add("ready");
+    $("face-label").textContent = "ATTACK";
+    $("face-sub").textContent = "…or defend it out";
   }
   function stopCharge() { if (chargeTimer) { cancelAnimationFrame(chargeTimer); chargeTimer = null; } }
 
-  $("face-btn").onclick = () => {
+  function faceBall(intent) {
     const btn = $("face-btn");
-    btn.disabled = true; btn.classList.remove("ready");
+    btn.disabled = true; $("def-btn").disabled = true; btn.classList.remove("ready");
     $("face-label").textContent = "BOWLING…"; $("face-sub").textContent = "";
     chargedAt = Date.now() + 1e9; // re-armed after the delivery lands
-    sendAction({ a: "ball" });
-  };
+    sendAction({ a: "ball", i: intent });
+  }
+  $("face-btn").onclick = () => faceBall("att");
+  $("def-btn").onclick = () => faceBall("def");
 
   // ---------- bowler modal ----------
   function renderBowlModal() {
@@ -490,7 +515,10 @@
     return new Promise(res => {
       const D = $("delivery");
       D.className = ""; // reset
-      $("dl-line").textContent = RUNUP_LINES[(ev.over * 7 + ev.ballInOver) % RUNUP_LINES.length];
+      const line = ev.intent === "att" ? "THE BATTER WANTS BLOOD — HERE HE COMES…"
+        : ev.intent === "def" ? "BAT STRAIGHT, SOFT HANDS — HERE HE COMES…"
+        : RUNUP_LINES[(ev.over * 7 + ev.ballInOver) % RUNUP_LINES.length];
+      $("dl-line").textContent = line;
       $("dl-d1").textContent = ev.pair[0]; $("dl-d2").textContent = ev.pair[1];
       const r = $("dl-result"), sub = $("dl-sub");
       let cls = "", txt, subtxt, shake = false, long = false;
@@ -498,13 +526,13 @@
         cls = "wkt"; txt = "OUT!"; shake = true; long = true;
         subtxt = ev.outMethod === "cap"
           ? `${ev.striker} — out by total strikes (${ev.totalStrikes}/${ev.capThreshold})`
-          : `${ev.bowler} finally gets ${ev.striker} — ${ev.bowlerStrikes} strikes of his own`;
+          : `${ev.bowler} finally gets ${ev.striker} — ${plural(ev.bowlerStrikes, "strike")} of his own`;
       } else if (ev.runs >= 6) { cls = "six"; txt = ev.runs > 6 ? ev.runs + " RUNS!" : "SIX!"; subtxt = pick6(ev); shake = true; long = true; }
       else if (ev.runs >= 4) { cls = "four"; txt = ev.runs > 5 ? ev.runs + " RUNS!" : "FOUR!"; subtxt = `${ev.striker} finds the rope`; }
       else if (ev.strikes >= 2) { txt = ev.strikes + " STRIKES!"; subtxt = `${ev.striker} in real trouble now`; }
       else if (ev.strikes === 1) { txt = "STRIKE!"; subtxt = `beaten — ${ev.bowler} is building something here`; }
-      else if (ev.runs > 0) { txt = ev.runs === 1 ? "1 RUN" : ev.runs + " RUNS"; subtxt = ev.runs === 1 ? "pushed into the gap" : "placed and run hard"; }
-      else { txt = "DOT BALL"; subtxt = "watchful — no run"; }
+      else if (ev.runs > 0) { txt = ev.runs === 1 ? "1 RUN" : ev.runs + " RUNS"; subtxt = ev.intent === "def" ? "blocked out, safe" : ev.runs === 1 ? "pushed into the gap" : "placed and run hard"; }
+      else { txt = "DOT BALL"; subtxt = ev.intent === "def" ? "dead-batted — pressure soaked" : "watchful — no run"; }
       if (ev.compound === "first") subtxt += " … and there's ANOTHER coming!";
       r.textContent = txt; r.className = "dl-result " + cls;
       sub.textContent = subtxt;
@@ -512,16 +540,24 @@
       D.classList.add("on", "running", "flying");
       if (ev.runs >= 6 && !ev.wicket) D.classList.add("hit-six");
       if (ev.runs >= 4 && ev.runs < 6 && !ev.wicket) D.classList.add("hit-four");
+      let closed = false, revealed = false;
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        D.className = "";
+        D.onclick = null;
+        chargedAt = 0; // batter can start charging the next ball
+        res();
+      };
       setTimeout(() => {
+        revealed = true;
         D.classList.add("reveal");
         if (ev.wicket) D.classList.add("smash");
         if (shake) D.classList.add("shake");
       }, 1650);
-      setTimeout(() => {
-        D.className = "";
-        chargedAt = 0; // batter can start charging the next ball
-        res();
-      }, long ? 3400 : 2750);
+      // click-to-skip once the result is up — big moments linger, dots don't
+      D.onclick = () => { if (revealed) close(); };
+      setTimeout(close, long ? 3300 : 2350);
     });
   }
   function pick6(ev) {
@@ -554,8 +590,14 @@
       ? `${flag(pcountry(r.winnerRole))} ${pcountry(r.winnerRole)} take it by ${r.margin}${r.type === "chase" ? " with the chase" : ""}.`
       : "Scores dead level — you could not script it.";
     $("res-cards").innerHTML = match.innings.map(cardTable).join("<div style='height:18px'></div>");
-    if (watcher) watcher.stop();
+    // keep watching: a rematch pointer may arrive from either player
   }
+  $("rematch-btn").onclick = async () => {
+    $("rematch-btn").disabled = true;
+    $("rematch-wait").style.display = "flex";
+    try { await NET.rematchRoom(my.code, doc); } // route() migrates both players
+    catch (e) { toast("Couldn't set up the rematch"); $("rematch-btn").disabled = false; $("rematch-wait").style.display = "none"; }
+  };
 
   function cardTable(inn) {
     const rows = inn.cards.map(c => {

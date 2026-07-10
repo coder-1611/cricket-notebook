@@ -45,8 +45,9 @@
             <div style="display:flex;flex-direction:column;gap:6px">
               <span class="klabel">FORMAT</span>
               <div class="seg" id="seg-format">
-                <button data-v="T20" class="sel">T20 · 20 overs</button>
-                <button data-v="ODI">ODI · 50 overs</button>
+                <button data-v="T10">T10 · quick</button>
+                <button data-v="T20" class="sel">T20 · classic</button>
+                <button data-v="ODI">ODI · marathon</button>
               </div>
             </div>
             <button class="btn hot" id="create-btn">CREATE ROOM →</button>
@@ -90,7 +91,8 @@
       <div class="panel-body squad-head">
         <div>
           <div class="h-serif" style="font-size:24px" id="squad-title">Your 25-man squad</div>
-          <div class="hint">Tap 11 players. You need a wicketkeeper, and remember: <b>low bowling number = better bowler</b>. Numbers show your picking order — that's the batting order draft (you can fix it next).</div>
+          <div class="hint">Tap 11 players. You need a wicketkeeper, and remember: <b>low bowling number = better bowler</b>.
+            ⚡ marks <b>aggressive batsmen</b> — bigger payoffs on some rolls, bigger risks on others. You'll set the batting order next.</div>
         </div>
         <div class="pick-count"><b id="pick-n">0</b>/11 PICKED</div>
       </div>
@@ -183,6 +185,7 @@
             <span style="flex:1"></span>
             <span class="phase-pill" id="phase-pill">—</span>
           </div>
+          <div class="how-out">Strikes stack two ways — fill <b>either bar</b> and the batsman is <b>OUT</b>: the total (vs everyone) or the duel (vs this one bowler).</div>
         </div>
 
         <div class="panel">
@@ -197,9 +200,14 @@
           <div class="action-panel">
             <button id="face-btn" disabled>
               <span class="ring"></span><span class="core"></span>
-              <span id="face-label">FACE BALL</span>
+              <span id="face-label">ATTACK</span>
               <small id="face-sub">charging…</small>
             </button>
+            <button id="def-btn" disabled>🛡 DEFEND</button>
+            <div class="intent-hint">
+              <b>ATTACK</b> — singles become boundaries, but every strike hits harder.<br>
+              <b>DEFEND</b> — nothing past 2 runs, and heavy balls are partly seen off.
+            </div>
             <div class="await-line" id="await-line"></div>
           </div>
         </div>
@@ -234,7 +242,11 @@
         <div class="result-wm">FULL TIME</div>
         <div class="big-num" id="res-title">—</div>
         <div class="h-serif" style="font-size:22px" id="res-sub">—</div>
-        <a class="btn hot big" href="play.html" style="text-decoration:none">PLAY AGAIN →</a>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+          <button class="btn hot big" id="rematch-btn">⚡ REMATCH — SAME TEAMS</button>
+          <a class="btn ghost big" href="play.html" style="text-decoration:none">NEW MATCH</a>
+        </div>
+        <div class="waiting-inline" id="rematch-wait" style="display:none"><span class="spin3"><i></i><i></i><i></i></span> setting up the rematch…</div>
       </div>
       <div class="panel-body" id="res-cards"></div>
     </div>
