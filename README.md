@@ -16,7 +16,7 @@ Just open `index.html` in a browser — no build, no dependencies.
 open index.html
 ```
 
-### Replay / testing deep links (hidden, not part of the UI)
+### Deep links (for replay / testing / sharing)
 
 ```
 index.html?seed=7&format=ODI&stadium=mumbai&auto=1&tab=worm
@@ -28,15 +28,20 @@ index.html?seed=7&format=ODI&stadium=mumbai&auto=1&tab=worm
 - `auto=1` – simulate on load · `to=<n>` – jump to ball index n · `tab=feed|worm|card1|card2`
 
 ## Features
-- **Two formats** — T20 (20 ov, mean ≈ 213) and ODI (50 ov, mean ≈ 302 with a
-  ~3.5:1 four:six ratio). See [tactics.md](tactics.md).
+- **Two formats** — T20 (20 ov, mean ≈ 202) and ODI (50 ov, mean ≈ 294/6 with a
+  ~3.3:1 four:six ratio). See [tactics.md](tactics.md).
 - **Real bowling tactics** — pace in the powerplay, spin through the middle overs,
   best pace held back for the death, 4/10-over caps, no back-to-back overs. Every
   ball shows the bowler type and phase chip.
 - **Powerplay & death run boost** — a U-shaped tempo curve (fast start, middle
   consolidation, death surge) in both formats.
-- **Random seeds** — every Simulate is a fresh match (`Match #<id>` shown in the
-  result); **Replay** re-runs the identical match.
+- **Two ways out** — the live average (great bowlers clean up set batsmen) and the
+  **total-strikes cap** = the batsman's exact rating (the primary ODI dismissal).
+- **Compound hits across two balls** — a "two sixes" / "two fours" plays out over
+  two deliveries; on an over's last ball the second goes to the other batsman.
+- **Seeds** — random by default (leave the **Seed** field blank; 🎲 rolls one),
+  or type/​link a seed to pick or replay a specific match; **Replay** re-runs the
+  last one.
 - **Live playback** — play / pause / step ± / skip-innings, speed control.
 - **Scoreboard** — striker & non-striker with dismissal-pressure strike meters, live chase math.
 - **Ball-by-ball commentary** with dice, run/strike badges, and wicket calls —
