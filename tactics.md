@@ -82,8 +82,9 @@ Two spec mechanics interact with bowling changes to reproduce real tactics:
   the live average is *not strictly below* the cap (i.e. against equal or weaker
   bowling), the dismissal is attributed to the cap and reported as
   **"out — N total strikes"** in the scorecard and "reaches N TOTAL strikes" in
-  commentary. Measured across 300 seeds it accounts for ~2–4% of wickets — rare
-  by design (good bowlers usually strike first via the average), but visible.
+  commentary. Measured across 500 seeds it accounts for **~2–3% of T20 wickets**
+  and **~8% of ODI wickets** (the ODI survival bonus keeps batsmen in long enough
+  for totals to accumulate) — rare by design against good bowling, but visible.
 * **Match-ups / protecting a total.** A lower-rated (better) bowler pulls every
   batsman's average down, so concentrating your best bowling into the phases that
   matter (powerplay wickets, death squeeze) directly buys more dismissals.
