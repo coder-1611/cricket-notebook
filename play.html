@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Play — Cricket Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="play.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a class="brand" href="index.html">
+      <span class="t1">Cricket</span><span class="t2">Notebook</span>
+      <span class="mode-chip">PLAY</span>
+    </a>
+    <div class="room-chip" id="room-chip" style="display:none">
+      ROOM <b id="room-code-chip">—</b>
+      <button id="copy-room" title="Copy invite link">⧉</button>
+    </div>
+  </header>
+
+  <!-- ============ ENTRY ============ -->
+  <section class="screen on" id="s-entry">
+    <div class="panel">
+      <div class="panel-cap">PLAY A FRIEND — LIVE, BALL BY BALL</div>
+      <div class="panel-body" style="display:flex;flex-direction:column;gap:16px">
+        <label style="display:flex;flex-direction:column;gap:7px;max-width:420px">
+          <span class="klabel">YOUR NAME</span>
+          <input id="name-input" class="cn-input" maxlength="18" placeholder="e.g. Soham">
+        </label>
+        <div class="split">
+          <div class="entry-card panel" style="box-shadow:none;border-width:2px">
+            <h2>Create a match</h2>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span class="klabel">YOUR COUNTRY</span>
+              <div class="seg" id="seg-country">
+                <button data-v="India" class="sel">🇮🇳 India</button>
+                <button data-v="Australia">🇦🇺 Australia</button>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span class="klabel">FORMAT</span>
+              <div class="seg" id="seg-format">
+                <button data-v="T20" class="sel">T20 · 20 overs</button>
+                <button data-v="ODI">ODI · 50 overs</button>
+              </div>
+            </div>
+            <button class="btn hot" id="create-btn">CREATE ROOM →</button>
+            <p class="hint">You'll get a 5-letter room code to send to your opponent. They take the other country.</p>
+          </div>
+          <div class="entry-card panel" style="box-shadow:none;border-width:2px">
+            <h2>Join a match</h2>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span class="klabel">ROOM CODE</span>
+              <input id="join-code" class="cn-input" maxlength="5" placeholder="ABCDE" style="letter-spacing:8px;text-transform:uppercase">
+            </div>
+            <button class="btn" id="join-btn">JOIN ROOM →</button>
+            <p class="hint">Your friend created a room and sent you the code (or a link). Enter it and you're in.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LOBBY ============ -->
+  <section class="screen" id="s-lobby">
+    <div class="panel">
+      <div class="panel-cap">MATCH LOBBY — <span id="lobby-format"></span></div>
+      <div class="lobby-players">
+        <div class="lp p1" id="lp1"><span class="who">PLAYER 1</span><div class="nm">—</div><div class="ct">—</div></div>
+        <div class="lobby-vs">vs</div>
+        <div class="lp p2 empty" id="lp2"><span class="who">PLAYER 2</span><div class="nm">waiting…</div><div class="ct">share the code ↓</div></div>
+      </div>
+      <div class="share-row">
+        <div class="share-code" id="share-code">—</div>
+        <button class="btn ghost" id="copy-link-btn">Copy invite link</button>
+      </div>
+      <div class="waiting-inline" id="lobby-wait"><span class="spin3"><i></i><i></i><i></i></span> waiting for your opponent to join…</div>
+    </div>
+  </section>
+
+  <!-- ============ SQUAD PICK ============ -->
+  <section class="screen" id="s-squad">
+    <div class="panel">
+      <div class="panel-cap" id="squad-cap">PICK YOUR XI</div>
+      <div class="panel-body squad-head">
+        <div>
+          <div class="h-serif" style="font-size:24px" id="squad-title">Your 25-man squad</div>
+          <div class="hint">Tap 11 players. You need a wicketkeeper, and remember: <b>low bowling number = better bowler</b>. Numbers show your picking order — that's the batting order draft (you can fix it next).</div>
+        </div>
+        <div class="pick-count"><b id="pick-n">0</b>/11 PICKED</div>
+      </div>
+      <div class="squad-grid" id="squad-grid"></div>
+      <div class="squad-foot">
+        <span class="warn" id="squad-warn"></span>
+        <button class="btn hot" id="squad-next" disabled>SET BATTING ORDER →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BATTING ORDER ============ -->
+  <section class="screen" id="s-order">
+    <div class="panel">
+      <div class="panel-cap">BATTING ORDER</div>
+      <div class="panel-body">
+        <div class="h-serif" style="font-size:24px">Who walks out first?</div>
+        <div class="hint">Use ▲▼ to arrange 1–11. Your openers face the new ball; keep a finisher for the death.</div>
+      </div>
+      <div class="order-list" id="order-list"></div>
+      <div class="squad-foot">
+        <button class="btn ghost" id="order-back">← BACK TO SQUAD</button>
+        <button class="btn hot" id="order-confirm">CONFIRM XI ✓</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WAIT FOR OPPONENT XI ============ -->
+  <section class="screen" id="s-waitxi">
+    <div class="panel">
+      <div class="panel-cap">XI LOCKED IN</div>
+      <div class="waiting-inline" style="padding:44px 20px"><span class="spin3"><i></i><i></i><i></i></span>
+        <span id="waitxi-line">waiting for your opponent to pick their XI…</span></div>
+    </div>
+  </section>
+
+  <!-- ============ TOSS ============ -->
+  <section class="screen" id="s-toss">
+    <div class="panel">
+      <div class="panel-cap">THE TOSS</div>
+      <div class="toss-stage">
+        <div class="coin" id="coin">🪙</div>
+        <div class="toss-res" id="toss-res">…</div>
+        <div class="toss-btns" id="toss-btns" style="display:none">
+          <button class="btn hot big" id="choose-bat">BAT FIRST</button>
+          <button class="btn big" id="choose-bowl">BOWL FIRST</button>
+        </div>
+        <div class="waiting-inline" id="toss-wait" style="display:none"><span class="spin3"><i></i><i></i><i></i></span> waiting for their call…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section class="screen" id="s-play">
+    <div class="turn-banner" id="turn-banner"><span class="dotp"></span><span id="turn-main">—</span><small id="turn-sub"></small></div>
+
+    <div class="score-strip">
+      <div class="score-cell hero">
+        <span class="klabel" id="sc-team">BATTING</span>
+        <span class="v" id="sc-score">0/0</span>
+      </div>
+      <div class="score-cell"><span class="klabel">OVERS</span><span class="v" id="sc-overs">0.0 <small id="sc-maxov"></small></span></div>
+      <div class="score-cell"><span class="klabel">RUN RATE</span><span class="v" id="sc-rr">—</span></div>
+      <div class="score-cell" id="sc-target-cell" style="display:none"><span class="klabel">NEED</span><span class="v" id="sc-need">—</span></div>
+      <div class="score-cell"><span class="klabel">PHASE</span><span class="v" style="font-size:16px;padding-top:5px" id="sc-phase">—</span></div>
+    </div>
+
+    <div class="play-grid">
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div class="panel">
+          <div class="panel-cap">AT THE CREASE</div>
+          <div class="crease">
+            <div class="bat-card striker" id="bc-striker">
+              <span class="onstrike">ON STRIKE</span>
+              <div class="nm" id="bs-name">—</div>
+              <div class="rn"><span id="bs-runs">0</span><small> (<span id="bs-balls">0</span>)</small></div>
+              <div class="pbar"><div class="lbl"><span>TOTAL STRIKES</span><span id="bs-cap">0/0</span></div><div class="track"><i id="bs-capbar"></i></div></div>
+              <div class="pbar vsb"><div class="lbl"><span>VS THIS BOWLER</span><span id="bs-vs">0/0</span></div><div class="track"><i id="bs-vsbar"></i></div></div>
+            </div>
+            <div class="bat-card" id="bc-partner">
+              <div class="nm" id="bp-name">—</div>
+              <div class="rn"><span id="bp-runs">0</span><small> (<span id="bp-balls">0</span>)</small></div>
+              <div class="pbar"><div class="lbl"><span>TOTAL STRIKES</span><span id="bp-cap">0/0</span></div><div class="track"><i id="bp-capbar"></i></div></div>
+            </div>
+          </div>
+          <div class="bowler-line">
+            <span class="klabel">BOWLING</span>
+            <span class="bw" id="bl-name">—</span>
+            <span class="fig" id="bl-fig"></span>
+            <span style="flex:1"></span>
+            <span class="phase-pill" id="phase-pill">—</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-cap">BALL BY BALL</div>
+          <div class="feed" id="feed"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div class="panel">
+          <div class="panel-cap" id="action-cap">NEXT BALL</div>
+          <div class="action-panel">
+            <button id="face-btn" disabled>
+              <span class="ring"></span><span class="core"></span>
+              <span id="face-label">FACE BALL</span>
+              <small id="face-sub">charging…</small>
+            </button>
+            <div class="await-line" id="await-line"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-cap">MATCH SITUATION</div>
+          <div class="panel-body" style="font-family:'Newsreader',serif;font-size:15.5px;line-height:1.55" id="situation">—</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ INNINGS BREAK ============ -->
+  <section class="screen" id="s-break">
+    <div class="panel">
+      <div class="panel-cap">INNINGS BREAK</div>
+      <div class="break-stage">
+        <div class="result-wm" id="break-kick">First innings closed</div>
+        <div class="big-num" id="break-score">—</div>
+        <div class="h-serif" style="font-size:20px" id="break-line">—</div>
+        <button class="btn hot big" id="break-continue" style="display:none">START THE CHASE →</button>
+        <div class="waiting-inline" id="break-wait" style="display:none"><span class="spin3"><i></i><i></i><i></i></span> waiting for the chasing side…</div>
+      </div>
+      <div class="panel-body" id="break-card"></div>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section class="screen" id="s-result">
+    <div class="panel">
+      <div class="panel-cap">MATCH RESULT</div>
+      <div class="break-stage">
+        <div class="result-wm">FULL TIME</div>
+        <div class="big-num" id="res-title">—</div>
+        <div class="h-serif" style="font-size:22px" id="res-sub">—</div>
+        <a class="btn hot big" href="play.html" style="text-decoration:none">PLAY AGAIN →</a>
+      </div>
+      <div class="panel-body" id="res-cards"></div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ BOWLER PICK MODAL ============ -->
+<div id="bowl-modal">
+  <div class="bowl-box">
+    <div class="panel-cap">PICK YOUR BOWLER — OVER <span id="bowl-over">1</span></div>
+    <div class="bowl-list" id="bowl-list"></div>
+  </div>
+</div>
+
+<!-- ============ DELIVERY ANIMATION ============ -->
+<div id="delivery">
+  <div class="dl-stage">
+    <div class="dl-line" id="dl-line">THE BOWLER TURNS AT THE TOP OF HIS MARK…</div>
+    <div class="dl-pitch">
+      <div class="dl-strip"></div>
+      <div class="dl-crease l"></div><div class="dl-crease r"></div>
+      <div class="stumps l"><i></i><i></i><i></i></div>
+      <div class="stumps r"><i></i><i></i><i></i></div>
+      <div class="dl-bowler"></div>
+      <div class="dl-ball"></div>
+    </div>
+    <div class="dice-pair"><div class="dl-die" id="dl-d1">·</div><div class="dl-die" id="dl-d2">·</div></div>
+    <div class="dl-result" id="dl-result">—</div>
+    <div class="dl-sub" id="dl-sub"></div>
+  </div>
+</div>
+
+<div id="net-loader"><div class="ldr-ball"></div><div class="ldr-line" id="net-line">CONNECTING…</div></div>
+<div class="toast" id="toast"></div>
+
+<script src="teams.js"></script>
+<script src="engine.js"></script>
+<script src="squads.js"></script>
+<script src="playengine.js"></script>
+<script src="net.js"></script>
+<script src="play.js"></script>
+</body>
+</html>

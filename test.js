@@ -51,16 +51,29 @@ for (const key in TABLE) {
 eq(rs([6, 6], 5, false), [0, 0], "6,6 at rating 5 = ≤5 branch (Dot)");
 eq(rs([4, 6], 5, false), [0, 0], "4,6 at rating 5 = ≤5 branch (Dot)");
 
-// ---- Dismissal thresholds (spec worked examples) ----
-eq(e.dismissalInfo(7, 1, 0).threshold, 4, "7-bat vs 1-bowl -> 4");
-eq(e.dismissalInfo(7, 1, 0).which, "average", "7v1 average bites");
-eq(e.dismissalInfo(7, 10, 0).threshold, 7, "7-bat vs 10-bowl -> 7 (cap)");
-eq(e.dismissalInfo(7, 10, 0).which, "cap", "7v10 cap bites");
-eq(e.dismissalInfo(7, 7, 0).threshold, 7, "7-bat vs 7-bowl -> 7");
-// avg == cap ties resolve to the total-strikes cap (so a top batsman vs a weak
-// bowler falls "by total strikes", which the player can actually see)
-eq(e.dismissalInfo(10, 10, 0).which, "cap", "10-bat vs 10-bowl -> total-strikes cap");
-eq(e.dismissalInfo(7, 7, 0).which, "cap", "7v7 tie -> total-strikes cap");
+// ---- Dismissal: two independent bars ------------------------------------
+// dismissalInfo(batting, bowling, totalStrikes, bowlerStrikes, bonus)
+//   cap   = batting rating          -> out when TOTAL strikes (any bowler) reach it
+//   avg   = floor((bat+bowl)/2)+bon -> out when THIS bowler's own tally reaches it
+// The live average is PER BOWLER: a strike from a different bowler advances the
+// total but not this bowler's tally.
+eq(e.dismissalInfo(7, 1, 0, 0).avg, 4, "7-bat vs 1-bowl live average = 4");
+eq(e.dismissalInfo(7, 1, 0, 0).cap, 7, "7-bat cap = 7 (rating)");
+eq(e.dismissalInfo(7, 1, 3, 3).out, false, "3 of this bowler's strikes (<4) -> not out");
+eq(e.dismissalInfo(7, 1, 4, 4).which, "average", "4th strike from this bowler -> average bites");
+
+// The user's headline example, encoded exactly:
+//  10-bat takes 4 strikes from a 1-bowl (bar = floor(11/2)=5) -> survives.
+eq(e.dismissalInfo(10, 1, 4, 4).out, false, "10v1: 4 strikes from this bowler (<5) -> survives");
+//  then 4 "random" strikes from OTHER bowlers -> total 8, this bowler still on 4.
+eq(e.dismissalInfo(10, 1, 8, 4).out, false, "10v1: 4 random strikes elsewhere don't matter (total 8<10, bowler 4<5)");
+//  the 1-bowl returns and lands a 5th -> total 9, this bowler on 5 -> OUT (average).
+eq(e.dismissalInfo(10, 1, 9, 5).which, "average", "10v1: same bowler's 5th strike -> OUT by live average");
+
+// Rating cap is universal: total strikes reach the rating even when no single
+// bowler filled their bar.
+eq(e.dismissalInfo(10, 5, 10, 3).which, "cap", "total strikes reach rating (no bowler at avg) -> out by total strikes");
+eq(e.dismissalInfo(10, 5, 9, 3).out, false, "9 total (<10) and bowler 3 (<7) -> not out");
 
 // ---- Base table must ignore profile === null (spec purity) ----
 eq(e.applyProfile(e.resolveBall([4, 6], 8, false), [4, 6], true, false, null),
@@ -72,6 +85,13 @@ const prof = (base, pair, high, ia, key) => e.applyProfile(base, pair, high, ia,
 // T20: 4,6 >5 two-4s(8) -> 4 ; 1,6 >5 IA reward preserved (12)
 eq(prof(e.resolveBall([4, 6], 8, false), [4, 6], true, false, "T20").runs, 4, "T20 4,6>5 -> 4 runs");
 eq(prof(e.resolveBall([1, 6], 8, true), [1, 6], true, true, "T20").runs, 12, "T20 1,6>5 IA reward preserved");
+// T20 strike production: three pure-dot cells become "beaten" balls (a strike),
+// so wickets rise without lowering any threshold. Base table keeps them as dots.
+eq(e.resolveBall([3, 4], 8, false).strikes, 0, "base 3,4 is a dot (profiles off)");
+eq(prof(e.resolveBall([3, 4], 8, false), [3, 4], true, false, "T20").strikes, 1, "T20 3,4 -> Strike");
+eq(prof(e.resolveBall([3, 6], 8, false), [3, 6], true, false, "T20").strikes, 1, "T20 3,6 -> Strike");
+eq(prof(e.resolveBall([3, 3], 3, false), [3, 3], false, false, "T20").strikes, 1, "T20 3,3 -> Strike (both branches)");
+eq(prof(e.resolveBall([3, 4], 8, false), [3, 4], true, false, "T20").runs, 0, "T20 3,4 strike concedes no runs");
 // ODI: 6,6 >5 12 -> 6 ; 4,4 -> 2 ; fours survive (4,5 / 4,6) ; strike-damp on 5,6 & 5,5
 eq(prof(e.resolveBall([6, 6], 8, false), [6, 6], true, false, "ODI").runs, 6, "ODI 6,6>5 -> 6 runs");
 eq(prof(e.resolveBall([2, 2], 8, false), [2, 2], true, false, "ODI").runs, 0, "ODI 2,2 -> Dot");
@@ -83,11 +103,13 @@ eq(prof(e.resolveBall([5, 6], 8, false), [5, 6], true, false, "ODI").strikes, 0,
 eq(prof(e.resolveBall([5, 5], 8, false), [5, 5], true, false, "ODI").strikes, 1, "ODI 5,5 double-strike -> single");
 
 // The rating cap is the EXACT batting rating (format-independent); the survival
-// bonus lifts only the live average.
-eq(e.dismissalInfo(10, 1, 0, 0).cap, 10, "cap = batting rating (T20, no bonus)");
-eq(e.dismissalInfo(10, 1, 0, 4).cap, 10, "cap = batting rating (ODI bonus does NOT raise cap)");
-eq(e.dismissalInfo(10, 1, 0, 4).avg, 9, "ODI bonus +4 lifts the live average only (floor((10+1)/2)+4)");
-eq(e.dismissalInfo(10, 2, 0, 4).which, "cap", "ODI: avg>=cap -> falls by TOTAL strikes");
+// bonus lifts only the per-bowler live average.
+eq(e.dismissalInfo(10, 1, 0, 0, 0).cap, 10, "cap = batting rating (T20, no bonus)");
+eq(e.dismissalInfo(10, 1, 0, 0, 4).cap, 10, "cap = batting rating (ODI bonus does NOT raise cap)");
+eq(e.dismissalInfo(10, 1, 0, 0, 4).avg, 9, "ODI bonus +4 lifts the live average only (floor((10+1)/2)+4)");
+// With the +4 bonus a single bowler's bar (9) sits below the cap (10) but needs
+// 9 strikes from ONE bowler — so in ODI almost everyone falls by total strikes.
+eq(e.dismissalInfo(10, 2, 10, 5, 4).which, "cap", "ODI: total reaches rating before any bowler fills their +4 bar");
 
 // ---- Powerplay/Death boost layer ----
 const bprof = (pair, r, ia, key, phase) =>

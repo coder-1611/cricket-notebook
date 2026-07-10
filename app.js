@@ -220,7 +220,11 @@ function renderAt(idx) {
   $("striker-name").innerHTML = `${escapeHtml(e.striker)}${e.strikerIA ? ' <span class="ia-badge">IA</span>' : ""}`;
   $("striker-runs").textContent = e.strikerRuns;
   $("striker-balls").textContent = `${e.strikerBalls} ball${e.strikerBalls === 1 ? "" : "s"}`;
-  $("striker-pressure").textContent = `strikes ${e.totalStrikes}/${e.threshold}`;
+  // total-strike cap is the main meter; show the current bowler's own live-average
+  // duel alongside it (the per-bowler bar that can also end the innings).
+  $("striker-pressure").textContent = (e.bowlerStrikes != null && e.avgThreshold != null)
+    ? `strikes ${e.totalStrikes}/${e.threshold} · vs bowler ${e.bowlerStrikes}/${e.avgThreshold}`
+    : `strikes ${e.totalStrikes}/${e.threshold}`;
   $("striker-meter").style.width = pct(e.totalStrikes, e.threshold);
   if (e.nonStriker) {
     $("card-partner").style.opacity = 1;
@@ -606,8 +610,8 @@ function renderRulesBody() {
   }
   $("rules-body").innerHTML = `
     <p>Every ball is a roll of <b>two dice</b>. The unordered pair is looked up in the Dice Table, which branches on the striker&rsquo;s <b>batting rating</b> (&gt;5 or &le;5) and their <b>IA</b> (aggression) trait.</p>
-    <p><b>Two currencies.</b> Runs go on the board; <b style="color:var(--orange)">strikes</b> stack on the batsman for the whole innings and never reset.</p>
-    <p><b>Two ways out.</b> Reach your own batting rating in total strikes (&ldquo;out &mdash; N total strikes&rdquo;), or cross the <b>live average</b> &mdash; &lfloor;(batting&nbsp;+&nbsp;bowler&rsquo;s rating)&thinsp;/&thinsp;2&rfloor; against whoever is bowling right now. Great bowlers drag the average down; a set batsman can fall the instant one comes on.</p>
+    <p><b>Two currencies.</b> Runs go on the board; <b style="color:var(--orange)">strikes</b> stack on the batsman and never reset. Each strike counts twice over: once on his <b>running total</b>, and once on the <b>tally of the bowler who bowled it</b>.</p>
+    <p><b>Two ways out.</b> <b>Total strikes</b> &mdash; every strike from every bowler adds to one total; reach your own batting rating and you&rsquo;re out (&ldquo;out &mdash; N total strikes&rdquo;), the universal ceiling. Or the <b>live average</b> &mdash; each bowler keeps a <i>separate</i> count of the strikes <i>they</i> landed on you; when one bowler&rsquo;s own count reaches &lfloor;(batting&nbsp;+&nbsp;that bowler&rsquo;s rating)&thinsp;/&thinsp;2&rfloor;, they get you. A strike from a different bowler adds to your total but not to <i>their</i> tally &mdash; and a wicket only falls on a ball actually bowled, never just because a new bowler comes on.</p>
     <p><b>Phases matter.</b> Pace attacks the powerplay, spin squeezes the middle overs, and scoring surges again at the death.</p>
     <p><b>Big hits come in twos.</b> A &ldquo;two sixes&rdquo; (or two fours) is played <b>across two deliveries</b> &mdash; one hit per ball. If the first lands on the last ball of the over, the ends change and the <b>other batsman</b> banks the second. And in a chase, the moment the target is passed the innings ends, so the second hit is never needed.</p>
     <p class="rules-note">Seeds are random &mdash; every simulation is a fresh match. Replay re-runs the last one identically.</p>

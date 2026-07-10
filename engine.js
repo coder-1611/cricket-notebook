@@ -76,21 +76,37 @@ function resolveBall(pair, rating, ia) {
   return { runs, strikes, label, big, iaApplied, branch };
 }
 
-// Dismissal thresholds. `bonus` (a format survival knob) is added to both the cap
-// and the live average — ODI batsmen "set" longer so innings last the distance.
-function dismissalInfo(battingRating, bowlingRating, accumulatedStrikes, bonus) {
+// Dismissal thresholds — TWO independent bars, either of which ends the innings:
+//
+//  • Rating cap (the TOTAL): every strike a batsman takes, from ANY bowler, adds
+//    to one running total. Out when that total reaches his exact batting rating.
+//    Universal and format-independent — a 10-rated batsman never survives past 10
+//    total strikes (a double-strike can overshoot it, which just means "out").
+//
+//  • Live average (PER BOWLER): each bowler keeps a SEPARATE count of the strikes
+//    *they personally* landed on this batsman. Out when that one bowler's count
+//    reaches floor((batting + that bowler's bowling)/2) (+ a format survival
+//    bonus). A strike from a different bowler advances the total (cap) but NOT
+//    this bowler's count — so "random" strikes elsewhere don't help this bowler.
+//    There is no walk-off: a bowler must actually deliver the strike that fills
+//    their own bar.
+//
+// `totalStrikes` is the universal running total; `bowlerStrikes` is how many the
+// CURRENT bowler has landed on this batsman.
+function dismissalInfo(battingRating, bowlingRating, totalStrikes, bowlerStrikes, bonus) {
   bonus = bonus || 0;
-  // The rating cap is the batsman's EXACT batting rating (a 10-rated batsman is
-  // out at 10 total strikes, in every format). The format survival bonus applies
-  // ONLY to the live average, so it lengthens innings without ever letting a
-  // batsman survive past their own rating in accumulated strikes.
-  const cap = battingRating;
-  const avg = Math.floor((battingRating + bowlingRating) / 2) + bonus;
-  const threshold = Math.min(cap, avg);
-  // When the live average is NOT strictly below the cap, the batsman falls by
-  // reaching their TOTAL strike count (the rating cap) — surface that as "cap".
-  const which = avg < cap ? "average" : "cap";
-  return { cap, avg, threshold, which, out: accumulatedStrikes >= threshold };
+  bowlerStrikes = bowlerStrikes || 0;
+  const cap = battingRating;                                     // total-strike bar
+  const avg = Math.floor((battingRating + bowlingRating) / 2) + bonus; // this bowler's bar
+  const outByCap = totalStrikes >= cap;
+  const outByAvg = bowlerStrikes >= avg;
+  const out = outByCap || outByAvg;
+  // A bowler filling their own bar ("average") takes precedence for the wicket
+  // credit/label; otherwise the batsman simply ran out of total strikes ("cap").
+  const which = outByAvg ? "average" : (outByCap ? "cap" : null);
+  // `threshold` (used by the UI pressure meter) tracks the universal total vs cap.
+  const threshold = cap;
+  return { cap, avg, threshold, which, out, outByCap, outByAvg, totalStrikes, bowlerStrikes };
 }
 
 // ----------------------------------------------------------------------------
@@ -109,6 +125,16 @@ var SCORING_PROFILES = {
       "2,6": { hi: 1, lo: 1 },       // Double -> Single
       "2,2": { hi: 1, lo: 1 },       // Double -> Single
       "1,6": { hi: 2, skipIA: true } // 4 runs -> Double (keep the IA two-sixes)
+    },
+    // Make strikes more common so the total-strike cap AND each bowler's own bar
+    // fill fast enough for a realistic ~5 wickets in 20 overs — three pure-dot
+    // cells become "beaten" balls (pressure without conceding runs). This lifts
+    // wickets WITHOUT lowering any dismissal threshold, so the total-strikes cap
+    // stays the primary way out (~55%) rather than flipping to the live average.
+    strikes: {
+      "3,3": { hi: 1, lo: 1 },       // Dot -> Strike
+      "3,4": { hi: 1, lo: 1 },       // Dot -> Strike
+      "3,6": { hi: 1, lo: 1 }        // Dot -> Strike
     },
     // Powerplay & Death: field up / slog — Doubles fly to the boundary.
     boost: {
@@ -255,6 +281,7 @@ function newBatCard(ref, order) {
   return {
     ref, order, name: ref.name, battingRating: ref.batting, ia: ref.ia,
     runs: 0, balls: 0, fours: 0, sixes: 0, strikes: 0,
+    byBowler: {}, // per-bowler strike tallies (live-average bars) keyed by bowler idx
     out: false, outMethod: null, outBowler: null, notOut: true, duck: false,
     onStrike: false
   };
@@ -299,49 +326,9 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
     const phaseName = phaseFor(over + 1, format).name;
     let overRuns = 0, overWk = 0;
 
-    // Live-average walk-off check when a new bowler comes on (no ball needed):
-    // a set batsman can fall the instant a much better bowler starts the over.
-    // (Skip when a compound's second hit is pending — that ball is already
-    // "in flight" from the previous over's roll and must be delivered first.)
-    for (const cIdx of pendingHit ? [] : [strikerIdx, nonStrikerIdx]) {
-      if (cIdx == null || cards[cIdx].out) continue;
-      const c = cards[cIdx];
-      const di = dismissalInfo(c.battingRating, bowlingRating, c.strikes, bonus);
-      if (di.out && di.which === "average") {
-        // Only the live average can trigger a no-ball-faced dismissal.
-        c.out = true; c.notOut = false; c.outMethod = "average";
-        c.outBowler = fieldingTeam.lineup[bowlerIdx].name;
-        c.duck = c.runs === 0;
-        wickets++; overWk++; creditBowlerWicket(bowlerIdx);
-        fow.push({ wicket: wickets, score: total, over: over, ball: 0, batsman: c.name, note: "new bowler on" });
-        // full crease snapshot so the UI can render this event like any ball
-        const partnerIdx = (cIdx === strikerIdx) ? nonStrikerIdx : strikerIdx;
-        const partner = (partnerIdx != null && !cards[partnerIdx].out) ? cards[partnerIdx] : null;
-        const pdi = partner ? dismissalInfo(partner.battingRating, bowlingRating, partner.strikes, bonus) : null;
-        ballLog.push({
-          inningNo, over: over + 1, ballInOver: 0, striker: c.name,
-          bowler: fieldingTeam.lineup[bowlerIdx].name, bowlerRating: bowlingRating,
-          bowlerType: fieldingTeam.lineup[bowlerIdx].type || "pace", phase: phaseName,
-          pair: null, iaApplied: false,
-          branch: null, label: "Bowler change", runs: 0, strikes: 0, totalStrikes: c.strikes,
-          capThreshold: di.cap, avgThreshold: di.avg, threshold: di.threshold,
-          wicket: true, outMethod: "average", teamScore: total, wickets,
-          strikerRuns: c.runs, strikerBalls: c.balls, strikerIA: c.ia,
-          nonStriker: partner ? partner.name : null, nonStrikerRuns: partner ? partner.runs : null,
-          nonStrikerBalls: partner ? partner.balls : null, nonStrikerIA: partner ? partner.ia : false,
-          nonStrikerStrikes: partner ? partner.strikes : null, nonStrikerThreshold: pdi ? pdi.threshold : null,
-          commentary: `${fieldingTeam.lineup[bowlerIdx].name} comes on and ${c.name} is gone before facing — the live average dropped to ${di.threshold}. WICKET!`
-        });
-        if (cIdx === strikerIdx) {
-          if (nextBat <= 10) { strikerIdx = nextBat++; cards[strikerIdx].onStrike = true; }
-          else { strikerIdx = null; }
-        } else {
-          if (nextBat <= 10) { nonStrikerIdx = nextBat++; }
-          else { nonStrikerIdx = null; }
-        }
-      }
-    }
-    if (wickets >= 10 || strikerIdx == null) { ended = true; break; }
+    // No walk-off: a batsman is only ever dismissed by a strike that is actually
+    // bowled to him. A new bowler starting an over changes nothing until they land
+    // a strike that fills the total-strike cap or their own per-bowler bar.
 
     for (let bib = 0; bib < 6 && !ended; bib++) {
       const striker = cards[strikerIdx];
@@ -378,12 +365,16 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
       bstat.runs += res.runs; bstat.balls++;
       if (res.runs === 0 && res.strikes === 0) bstat.dots++;
 
-      // apply strikes
+      // apply strikes — every strike bumps BOTH the universal total (cap) and the
+      // current bowler's own per-bowler bar (live average). A strike from another
+      // bowler never touches this bowler's bar.
       striker.strikes += res.strikes;
+      if (res.strikes) striker.byBowler[bowlerIdx] = (striker.byBowler[bowlerIdx] || 0) + res.strikes;
       ballsBowled++;
 
-      // dismissal check vs current bowler
-      const di = dismissalInfo(striker.battingRating, bowlingRating, striker.strikes, bonus);
+      // dismissal check: total vs cap, and THIS bowler's tally vs the live average
+      const bowlerStrikes = striker.byBowler[bowlerIdx] || 0;
+      const di = dismissalInfo(striker.battingRating, bowlingRating, striker.strikes, bowlerStrikes, bonus);
       let wicket = false, outMethod = null;
       if (di.out) {
         wicket = true; outMethod = di.which;
@@ -398,7 +389,7 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
         ? compoundCommentary(compound, res, striker, [d1, d2])
         : makeCommentary(res, striker, di, wicket, [d1, d2]);
       const partner = (nonStrikerIdx != null) ? cards[nonStrikerIdx] : null;
-      const pdi = partner ? dismissalInfo(partner.battingRating, bowlingRating, partner.strikes, bonus) : null;
+      const pdi = partner ? dismissalInfo(partner.battingRating, bowlingRating, partner.strikes, partner.byBowler[bowlerIdx] || 0, bonus) : null;
       ballLog.push({
         inningNo, over: over + 1, ballInOver: bib + 1, striker: striker.name,
         bowler: fieldingTeam.lineup[bowlerIdx].name, bowlerRating: bowlingRating,
@@ -407,7 +398,7 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
         pair: [d1, d2], iaApplied: res.iaApplied,
         branch: res.branch, label: res.label, runs: res.runs, strikes: res.strikes,
         compound: compound ? compound.part : null, compoundToOther: compound ? compound.toOther : false,
-        totalStrikes: striker.strikes, capThreshold: di.cap, avgThreshold: di.avg, threshold: di.threshold,
+        totalStrikes: striker.strikes, bowlerStrikes, capThreshold: di.cap, avgThreshold: di.avg, threshold: di.threshold,
         wicket, outMethod, teamScore: total, wickets, big: res.big, commentary,
         // crease snapshot (for live playback rendering)
         strikerRuns: striker.runs, strikerBalls: striker.balls, strikerIA: striker.ia,
@@ -460,8 +451,8 @@ function makeCommentary(res, striker, di, wicket, pair) {
   const who = striker.name;
   if (wicket) {
     const how = di.which === "cap"
-      ? `reaches ${striker.strikes} TOTAL strikes — the rating cap`
-      : `crosses the live average of ${di.avg} vs this bowler`;
+      ? `reaches ${striker.strikes} TOTAL strikes — out by total strikes`
+      : `has now taken ${di.bowlerStrikes} strikes from this bowler — the live average of ${di.avg} is up`;
     return `${dice} OUT! ${who} ${how}. ${striker.runs === 0 ? "Gone for a DUCK." : `Departs for ${striker.runs}.`}`;
   }
   if (res.big && res.runs >= 12) return `${dice} MAXIMUM! ${who} clears the ropes twice — ${res.runs} runs!`;

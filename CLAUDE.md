@@ -1,6 +1,9 @@
 # Cricket Notebook
 
-Two-player dice-cricket simulator (T20 + ODI). No build step — open `index.html`.
+Dice cricket (T20 + ODI). No build step. `index.html` = landing; `sim.html` =
+auto-play dashboard; `play.html` + `play.js/css` + `playengine.js` + `squads.js`
++ `net.js` = two-player online PLAY mode (Firebase RTDB REST/SSE, namespaced
+`/cricket-notebook` on the flashcards DB, deterministic action-log replay).
 
 - `engine.js` — deterministic rules engine; `test.js` (`node test.js`) must stay green.
 - `tactics.md` — bowling tactics + match-balance design doc; keep in sync with engine changes.

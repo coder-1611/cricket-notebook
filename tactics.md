@@ -70,30 +70,30 @@ is visible ball by ball, and the scorecard's bowling figures reflect the plan.
 
 ## 2. Wicket tactics that already fall out of the rules
 
-Two spec mechanics interact with bowling changes to reproduce real tactics:
+Strikes are tracked **two ways at once**, and either can end an innings:
 
-* **Bring on a better bowler to break a partnership.** Because the dismissal
-  threshold is the *live average* `floor((batting + current bowler) / 2)`, a set
-  batsman sitting on safe strikes can fall the **instant a much better bowler comes
-  on** — no new strike needed. This is the engine's version of a captain throwing
-  the ball to his ace to remove a dangerous, set batsman.
-* **Out by TOTAL strikes (the rating cap).** The cap is the batsman's **exact
-  batting rating** — a 10-rated batsman is out the moment they reach **10** total
-  strikes, in every format (the survival bonus below lifts only the average, never
-  the cap). It is reported as **"out — N total strikes"** in the scorecard and
-  "reaches N TOTAL strikes" in commentary. Its share of wickets is a *format
-  choice*:
-  * **ODI ≈ 85%** — this is the **primary** way an ODI wicket falls. The `+4`
-    average bonus sits above the cap for most match-ups, so batsmen almost always
-    reach their own rating in strikes before the live average catches them.
-  * **T20 ≈ 1%** — the cap is a hard *ceiling* (nobody survives past their rating),
-    but with no average bonus the live average is lower for good bowling and does
-    the day-to-day dismissing, keeping a 20-over innings to a realistic ~6 wickets.
-    (Forcing the cap to dominate T20 too would drop it to ~3 wickets — unrealistic
-    for the format, so it's deliberately left as a ceiling.)
-* **Match-ups / protecting a total.** A lower-rated (better) bowler pulls every
-  batsman's average down, so concentrating your best bowling into the phases that
-  matter (powerplay wickets, death squeeze) directly buys more dismissals.
+* **Out by TOTAL strikes (the rating cap) — the universal ceiling.** Every strike a
+  batsman takes, *from any bowler*, adds to one running total. He is out the moment
+  that total reaches his **exact batting rating** — a 10-rated batsman is out at
+  **10** total strikes, in every format (the survival bonus below lifts only the
+  live average, never this cap). Nobody ever survives past their own rating in
+  strikes. Reported as **"out — N total strikes"** in the scorecard and "reaches N
+  TOTAL strikes" in commentary. This is the **primary** dismissal (ODI ≈ 97%,
+  T20 ≈ 62%).
+* **Out by the LIVE AVERAGE — a per-bowler duel.** Each bowler keeps a *separate*
+  tally of the strikes **they personally** landed on this batsman. When one bowler's
+  own tally reaches `floor((batting + that bowler's rating) / 2)` (+ the format
+  bonus), that bowler gets him. A strike from a *different* bowler advances the
+  total (cap) but **not** this bowler's tally — so "random" strikes elsewhere never
+  help a given bowler. **There is no walk-off:** a wicket only falls on a ball
+  actually bowled, never merely because a better bowler comes on. This is the
+  situational path (T20 ≈ 38%, ODI ≈ 3%) and rewards sustained pressure from one
+  bowler on one batsman.
+* **Match-ups / working a batsman over.** A lower-rated (better) bowler has a lower
+  per-batsman bar, so giving your ace a *sustained* spell at a set batsman — rather
+  than one over — is how the live average actually claims a wicket. Concentrating
+  your best bowling into the phases that matter (powerplay, death) both squeezes
+  runs and builds those per-bowler tallies toward a dismissal.
 
 These are not extra code — they are consequences of the spec, surfaced by the
 phase plan putting the right bowlers on at the right time.
@@ -123,9 +123,18 @@ The two biggest boundary cells come down a notch; the showpiece hits stay.
 | 2,6 | Double (2) | **Single (1)** | fewer easy twos |
 | 2,2 | Double (2) | **Single (1)** | fewer easy twos |
 | 1,6 (non-IA) | Four (4) | **Double (2)** | IA "two sixes" reward preserved |
+| 3,3 / 3,4 / 3,6 | Dot | **Strike** | three dead dots become "beaten" balls |
 
 Everything else — including 6,6 = two sixes (12) and 4,4 = two 4s (8) — is
 untouched, so big overs still happen, just less relentlessly.
+
+**Why the extra strikes.** With the live average now a *per-bowler* bar (a single
+bowler must fill their own tally in ≤4 overs), strikes are scarce and a 20-over
+innings lost only ~2.8 wickets. Rather than lowering any dismissal threshold — which
+would flip the game to average-dominant — three pure-dot cells become strikes, so
+both the total-strike cap *and* each bowler's tally fill faster. This lifts T20 to
+**~5 wickets/innings (~2% bowled out)** with the **total-strike cap still primary
+(~55%)**, the mean holding at ~196, and the four:six ratio unchanged (~2.9:1).
 
 **Result (600-seed sweep):** T20 first innings **mean ≈ 213, ~6 wickets**, with
 **~26 fours to ~9 sixes (≈ 3:1)** — in the requested **180–220** band.
@@ -144,13 +153,14 @@ shape — plenty of fours, occasional sixes — survives:
 * **Strike damping:** 5,6 (Strike → Dot) and 5,5 (Double Strike → single Strike),
   so batsmen accumulate strikes slowly enough to bat the full 50 overs *before*
   hitting their rating cap — otherwise every side is bowled out ~over 41 for ~262.
-* **Survival bonus `+4` on the average only:** `avg = floor((bat+bowl)/2) + 4`
-  while `cap = batting`. This lifts the average above the cap for most match-ups,
-  making the **total-strikes cap the dominant ODI dismissal (~85%)** while innings
-  still last close to the full 50 overs.
+* **Survival bonus `+4` on the (per-bowler) average only:** `avg = floor((bat+bowl)/2) + 4`
+  while `cap = batting`. Because the average is now a *per-bowler* bar, a single
+  bowler would need ~9 strikes on one batsman to trigger it — so in ODI the
+  **total-strikes cap is almost the only dismissal (~97%)**, and innings last close
+  to the full 50 overs.
 
-**Result (600-seed sweep):** ODI first innings **mean ≈ 294, ~6–7 wickets, ~50
-overs**, with **~34 fours to ~10 sixes (≈ 3.3:1 four:six ratio)** — the requested
+**Result (4000-seed sweep):** ODI first innings **mean ≈ 287, ~6 wickets, ~50
+overs**, with **~36 fours to ~11 sixes (≈ 3.2:1 four:six ratio)** — the requested
 **"300/6-ish"** with a realistic boundary mix, and total-strikes as the headline
 dismissal.
 
@@ -218,7 +228,9 @@ All of the above is covered by `node test.js`:
   raises the threshold);
 * the boost layer fires **only** in Powerplay/Death (2,4→Four in T20 PP/Death but
   Double in the middle; ODI dot-cells revive in the PP) and never touches IA hits;
-* the `avg == cap` tie resolves to the **total-strikes cap** dismissal;
+* the per-bowler live average: a bowler's *own* strike tally triggers it, "random"
+  strikes from other bowlers advance only the total (the user's worked example is
+  encoded verbatim), and the total-strikes cap is the universal ceiling;
 * 300 seeds across **both formats**: never >10 wickets, never over the per-format
   over cap (4 / 10), chase results classified correctly.
 

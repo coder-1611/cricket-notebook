@@ -7,230 +7,117 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<style>
+  :root{
+    --paper:#F3EDDF; --ink:#211C13; --orange:#C43D0C; --gold:#D99000; --blue:#1849C6;
+    --rule:#211C1322; --muted:#211C13AA;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Archivo",system-ui,sans-serif;
+    display:flex;align-items:center;justify-content:center;
+    background-image:radial-gradient(#211C130A 1px, transparent 1px);
+    background-size:22px 22px;
+  }
+
+  /* ---------- friendly loader ---------- */
+  #loader{
+    position:fixed;inset:0;background:var(--paper);z-index:50;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    transition:opacity .45s ease, visibility .45s;
+  }
+  #loader.gone{opacity:0;visibility:hidden;pointer-events:none}
+  .ldr-ball{
+    width:64px;height:64px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #E8532A, var(--orange) 65%);
+    position:relative; animation:bounce 1.05s cubic-bezier(.3,0,.6,1) infinite;
+    box-shadow:0 4px 0 #0002;
+  }
+  .ldr-ball::before{
+    content:"";position:absolute;inset:0;border-radius:50%;
+    border:2px dashed #F3EDDFCC;border-left:none;border-right:none;
+    transform:rotate(18deg);
+  }
+  .ldr-shadow{width:70px;height:10px;border-radius:50%;background:#211C1322;animation:squash 1.05s cubic-bezier(.3,0,.6,1) infinite;margin-top:-18px}
+  @keyframes bounce{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-46px) rotate(180deg)}}
+  @keyframes squash{0%,100%{transform:scaleX(1);opacity:.7}50%{transform:scaleX(.55);opacity:.3}}
+  .ldr-line{font-family:"IBM Plex Mono",monospace;font-size:13px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted)}
+  @media (prefers-reduced-motion: reduce){.ldr-ball,.ldr-shadow{animation:none}}
+
+  /* ---------- landing ---------- */
+  .wrap{width:min(980px, 92vw);display:flex;flex-direction:column;gap:34px;padding:40px 0}
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .t1{font-family:"Newsreader",serif;font-style:italic;font-weight:700;font-size:52px}
+  .t2{font-weight:900;font-size:52px;letter-spacing:-1.5px;font-stretch:75%}
+  .sub{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:3px;color:var(--muted);width:100%}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media (max-width:720px){.modes{grid-template-columns:1fr}.t1,.t2{font-size:38px}}
+  .mode{
+    border:2px solid var(--ink);background:#FBF7EC;text-decoration:none;color:var(--ink);
+    padding:30px 28px 26px;display:flex;flex-direction:column;gap:12px;position:relative;
+    box-shadow:6px 6px 0 var(--ink);transition:transform .14s ease, box-shadow .14s ease;
+  }
+  .mode:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--ink)}
+  .mode:active{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--ink)}
+  .mode .kicker{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:3px;color:#FBF7EC;padding:4px 10px;align-self:flex-start}
+  .mode.play .kicker{background:var(--orange)}
+  .mode.sim .kicker{background:var(--blue)}
+  .mode h2{font-weight:900;font-size:34px;letter-spacing:-.5px;font-stretch:80%}
+  .mode p{font-family:"Newsreader",serif;font-size:17px;line-height:1.5;color:var(--muted)}
+  .mode .go{font-family:"IBM Plex Mono",monospace;font-size:13px;letter-spacing:2px;margin-top:6px}
+  .mode.play .go{color:var(--orange)} .mode.sim .go{color:var(--blue)}
+  footer{display:flex;gap:18px;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:1.5px}
+  footer a{color:var(--muted)}
+</style>
 </head>
 <body>
-<div class="wrap">
 
-  <!-- ============ HEADER ============ -->
-  <header class="top">
-    <div class="brand">
-      <div class="ball"></div>
-      <div>
-        <div style="display:flex;align-items:baseline;gap:10px">
-          <span class="t1">Cricket</span><span class="t2">Notebook</span>
-        </div>
-        <div class="sub">TWO-PLAYER DICE CRICKET &middot; T20 &amp; ODI</div>
-      </div>
-    </div>
-    <div class="stadium-chip">
-      <span class="pulse"></span>
-      <span style="font-weight:600" id="chip-stadium">Wankhede Stadium, Mumbai</span>
-      <span style="color:var(--faint)">&middot;</span>
-      <span style="color:var(--muted)" id="chip-format">T20 &middot; 20 overs</span>
-    </div>
+<div id="loader" aria-hidden="true">
+  <div class="ldr-ball"></div>
+  <div class="ldr-shadow"></div>
+  <div class="ldr-line" id="ldr-line">ROLLING THE DICE…</div>
+</div>
+
+<div class="wrap">
+  <header>
+    <span class="t1">Cricket</span><span class="t2">Notebook</span>
+    <span class="sub">TWO-PLAYER DICE CRICKET · INDIA v AUSTRALIA · T20 &amp; ODI</span>
   </header>
 
-  <div class="body-grid">
-
-    <!-- ============ SETUP RAIL ============ -->
-    <aside id="setup-panel">
-      <div class="panel-cap">MATCH SETUP</div>
-      <div class="setup-body">
-        <div class="matchup">
-          <div class="side">
-            <div class="tname"><span class="sq ind"></span>India</div>
-            <div class="tavg" id="ind-avg">BAT — &middot; BOWL —</div>
-          </div>
-          <div class="vs">vs</div>
-          <div class="side">
-            <div class="tname">Australia<span class="sq aus"></span></div>
-            <div class="tavg" id="aus-avg">BAT — &middot; BOWL —</div>
-          </div>
-        </div>
-        <div class="hr"></div>
-        <label class="field">
-          <span class="k">STADIUM</span>
-          <select id="stadium-select" class="cn-select"></select>
-        </label>
-        <label class="field">
-          <span class="k">FORMAT</span>
-          <select id="format-select" class="cn-select"></select>
-        </label>
-        <label class="field">
-          <span class="k">SEED <span style="color:var(--faint);text-transform:none;letter-spacing:0">— blank = random</span></span>
-          <div class="seed-row">
-            <input id="seed-input" class="cn-input" type="number" min="0" inputmode="numeric" placeholder="random each match">
-            <button id="seed-dice" type="button" title="Roll a random seed">&#127922;</button>
-          </div>
-          <span class="seed-current" id="seed-current"></span>
-        </label>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <button id="simulate-btn">&#9654;&#65038; Simulate Match</button>
-          <div class="btn-pair">
-            <button id="rules-btn" class="btn-ghost">Rules</button>
-            <button id="replay-btn" class="btn-ghost" title="Re-run the exact same match">Replay</button>
-          </div>
-        </div>
-      </div>
-      <div style="border-top:1px solid var(--rule)">
-        <button id="lineups-toggle"><span>TEAM LINEUPS</span><span id="lineups-chev">&#9662; SHOW</span></button>
-        <div class="lineups-box hidden" id="lineups-box"></div>
-      </div>
-    </aside>
-
-    <!-- ============ MAIN COLUMN ============ -->
-    <main class="col">
-
-      <!-- scoreboard -->
-      <section id="scoreboard">
-        <div class="sb-grid">
-          <div class="sb-slab" id="slab-a">
-            <div class="bar" id="slab-a-bar" style="background:var(--gold)"></div>
-            <div class="tlabel" id="slab-a-label" style="color:var(--gold)">&mdash;</div>
-            <div class="score" id="slab-a-score">&mdash;</div>
-            <div class="meta" id="slab-a-meta"></div>
-          </div>
-          <div class="sb-slab" id="slab-b">
-            <div class="bar" id="slab-b-bar" style="background:var(--blue-bright)"></div>
-            <div class="tlabel" id="slab-b-label" style="color:var(--blue-pale)">&mdash;</div>
-            <div class="score" id="slab-b-score">&mdash;</div>
-            <div class="meta" id="slab-b-meta"></div>
-          </div>
-        </div>
-        <div id="chase-strip">
-          <span class="cap" id="chase-cap">NEW MATCH</span>
-          <span style="opacity:.6">&#124;</span>
-          <span id="chase-text">Pick a format and hit Simulate — every match is a fresh random seed.</span>
-        </div>
-      </section>
-
-      <!-- live area (hidden until a match exists) -->
-      <div id="live-area" class="hidden" style="display:flex;flex-direction:column;gap:20px">
-
-        <!-- crease -->
-        <section id="crease">
-          <div class="crease-grid">
-            <div class="batsman-card striker" id="card-striker">
-              <div class="hdw">
-                <div class="bname" id="striker-name">&mdash;</div>
-                <span class="onstrike-pill">ON STRIKE</span>
-              </div>
-              <div class="runsrow">
-                <span class="bruns" id="striker-runs">0</span>
-                <span class="bballs" id="striker-balls">0 balls</span>
-              </div>
-              <div class="pressure">
-                <div class="prow"><span>PRESSURE</span><span class="pv" id="striker-pressure">strikes 0/0</span></div>
-                <div class="meter"><i id="striker-meter" style="width:0%"></i></div>
-              </div>
-            </div>
-            <div class="batsman-card partner" id="card-partner">
-              <div class="hdw">
-                <div class="bname" id="partner-name">&mdash;</div>
-                <span id="partner-tag"></span>
-              </div>
-              <div class="runsrow">
-                <span class="bruns" id="partner-runs">0</span>
-                <span class="bballs" id="partner-balls">0 balls</span>
-              </div>
-              <div class="pressure">
-                <div class="prow"><span>PRESSURE</span><span id="partner-pressure">strikes 0/0</span></div>
-                <div class="meter"><i id="partner-meter" style="width:0%"></i></div>
-              </div>
-            </div>
-          </div>
-          <div id="bowler-line">
-            <span class="k">BOWLING</span>
-            <span class="bwname" id="bowler-name">&mdash;</span>
-            <span class="bwtype" id="bowler-type"></span>
-            <span class="spacer"></span>
-            <span class="phase-chip pp" id="chip-pp">POWERPLAY</span>
-            <span class="phase-chip mid" id="chip-mid">MIDDLE</span>
-            <span class="phase-chip death" id="chip-death">DEATH</span>
-          </div>
-        </section>
-
-        <!-- last ball -->
-        <section id="last-ball">
-          <div class="dice-row">
-            <div class="die d1" id="die-1"></div>
-            <div class="die d2" id="die-2"></div>
-          </div>
-          <div class="lb-txt">
-            <div class="lb-head">
-              <span id="lb-label">Ready</span>
-              <span id="lb-pair"></span>
-            </div>
-            <div id="lb-comm">Press play to bowl.</div>
-          </div>
-          <span id="result-pill">&middot;</span>
-        </section>
-
-        <!-- playback -->
-        <section id="playback">
-          <button id="step-back-btn" class="pb-sq" title="Step back">&#9198;&#65038;</button>
-          <button id="play-btn" title="Play / pause">&#9654;&#65038; Play</button>
-          <button id="step-fwd-btn" class="pb-sq" title="Step forward">&#9197;&#65038;</button>
-          <button id="skip-innings-btn" class="pb-wide">&#9197;&#65038;&#9197;&#65038; Skip innings</button>
-          <span class="spacer"></span>
-          <label class="speed-lbl">SPEED
-            <input id="speed-slider" type="range" min="1" max="10" value="6">
-          </label>
-        </section>
-
-        <!-- result banner -->
-        <section id="result-banner" class="hidden">
-          <div class="wm" id="result-wm">WIN</div>
-          <div class="rk" id="result-kicker">MATCH &middot; RESULT</div>
-          <div class="rtitle" id="result-title"></div>
-          <div class="rsub" id="result-sub"></div>
-        </section>
-
-        <!-- tabs -->
-        <section style="display:flex;flex-direction:column;gap:0">
-          <div id="tab-bar" role="tablist">
-            <button id="tab-commentary" class="cn-tab active" role="tab" data-tab="commentary">Commentary</button>
-            <button id="tab-worm" class="cn-tab" role="tab" data-tab="worm">Run Worm</button>
-            <button id="tab-innings1" class="cn-tab" role="tab" data-tab="card1">1st Innings Card</button>
-            <button id="tab-innings2" class="cn-tab" role="tab" data-tab="card2">2nd Innings Card</button>
-          </div>
-
-          <div id="panel-commentary" class="tab-panel" data-panel="commentary">
-            <div class="feed-cap">
-              <span class="k" style="letter-spacing:2.5px">BALL-BY-BALL</span>
-              <span class="k" style="color:var(--faint);letter-spacing:0" id="feed-count"></span>
-            </div>
-            <div id="feed"></div>
-          </div>
-
-          <div id="panel-worm" class="tab-panel hidden" data-panel="worm">
-            <div class="worm-legend" id="worm-legend"></div>
-            <div id="worm-chart"></div>
-          </div>
-
-          <div id="panel-innings1" class="tab-panel innings-panel hidden" data-panel="card1"></div>
-          <div id="panel-innings2" class="tab-panel innings-panel hidden" data-panel="card2"></div>
-        </section>
-
-      </div><!-- /live-area -->
-    </main>
+  <div class="modes">
+    <a class="mode play" href="play.html">
+      <span class="kicker">TWO PLAYERS · ONLINE</span>
+      <h2>Play a Match</h2>
+      <p>Pick your XI from a 25-man squad of all-time greats, set your batting order,
+         choose your bowlers over by over — and face every ball with a click.
+         Share a room code and play a friend live.</p>
+      <span class="go">CREATE OR JOIN A ROOM →</span>
+    </a>
+    <a class="mode sim" href="sim.html">
+      <span class="kicker">SOLO · AUTO-PLAY</span>
+      <h2>Simulate</h2>
+      <p>Let the legends decide it. Watch a full T20 or ODI unfold ball by ball with
+         commentary, scorecards and the run worm — every match a fresh random seed.</p>
+      <span class="go">OPEN THE SIM DASHBOARD →</span>
+    </a>
   </div>
+
+  <footer>
+    <a href="records.html">🏆 Orange &amp; Purple Cap records</a>
+  </footer>
 </div>
 
-<!-- ============ RULES MODAL ============ -->
-<div id="rules-modal" class="hidden">
-  <div class="rules-box">
-    <div class="rules-cap">
-      <span class="t">How dice cricket works</span>
-      <button id="rules-close-btn">&#10005;</button>
-    </div>
-    <div class="rules-body" id="rules-body"></div>
-  </div>
-</div>
-
-<script src="teams.js"></script>
-<script src="engine.js"></script>
-<script src="app.js"></script>
+<script>
+  // friendly intro loader — quick, then out of the way
+  const lines = ["ROLLING THE DICE…", "PITCH REPORT: FLAT, RUNS EXPECTED", "OILING THE BATS…"];
+  let i = 0;
+  const tick = setInterval(() => { i++; document.getElementById("ldr-line").textContent = lines[i % lines.length]; }, 420);
+  window.addEventListener("load", () => setTimeout(() => {
+    clearInterval(tick);
+    document.getElementById("loader").classList.add("gone");
+  }, 900));
+</script>
 </body>
 </html>
