@@ -167,7 +167,8 @@
 
   // ---------- lobby ----------
   function renderLobby() {
-    $("lobby-format").textContent = doc.format === "ODI" ? "ODI · 50 OVERS" : "T20 · 20 OVERS";
+    const fmt = FORMATS_PLAY[doc.format] || FORMATS_PLAY.T20;
+    $("lobby-format").textContent = `${fmt.key} · ${fmt.overs} OVERS`;
     $("share-code").textContent = my.code;
     const set = (el, role) => {
       const p = doc.players[role];
@@ -405,8 +406,14 @@
     if (e.compound === "second") return e.compoundToOther
       ? `${e.label} again! New over, new end — ${e.striker} banks the second one.`
       : `${e.label} again! ${e.striker} doubles up.`;
-    if (e.runs >= 6) return `${iv}SIX! ${e.striker} goes all the way.`;
-    if (e.runs >= 4) return `${iv}FOUR! Crunched by ${e.striker}.${e.strikes ? " But a strike too…" : ""}`;
+    if (e.runs >= 6) {
+      const sixes = [`SIX! ${e.striker} goes all the way.`, `SIX! Clean off the middle from ${e.striker}.`, `SIX! ${e.striker} deposits it into the crowd.`, `SIX! No stopping that — huge from ${e.striker}.`];
+      return iv + sixes[(e.over * 5 + e.ballInOver) % sixes.length];
+    }
+    if (e.runs >= 4) {
+      const fours = [`FOUR! Crunched by ${e.striker}.`, `FOUR! ${e.striker} threads the gap.`, `FOUR! Nothing wrong with that from ${e.striker}.`, `FOUR! ${e.striker} finds the fence again.`];
+      return iv + fours[(e.over * 3 + e.ballInOver) % fours.length] + (e.strikes ? " But a strike too…" : "");
+    }
     if (e.strikes >= 2) return `${iv}big pressure — ${plural(e.strikes, "strike")} on ${e.striker} (${e.totalStrikes}/${e.capThreshold}).`;
     if (e.strikes === 1) return `${iv}beaten! A strike on ${e.striker} (${e.totalStrikes}/${e.capThreshold} total, ${e.bowlerStrikes} to ${e.bowler}).`;
     if (e.runs === 0) return `${iv}dot ball — good tight line.`;
