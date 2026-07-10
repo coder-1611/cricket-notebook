@@ -6,7 +6,7 @@ rating (`> 5`) and their **IA** ("Intent is Aggression") trait. Outcomes pay
 **runs** and/or **strikes**; a batsman is dismissed the instant strikes reach
 either their **rating cap** (total strikes = own rating) or the **live average**
 against the current bowler. Fully deterministic from a seed + lineups — but the
-seed is always drawn at random; use **Replay** to re-run the exact same match.
+seed is drawn at random by default — leave the **Seed** field blank — or type a seed (or hit 🎲) to pick/replay a specific match; **Replay** re-runs the last one.
 
 ## Run it
 

@@ -104,6 +104,20 @@ main.col { flex: 1 1 620px; min-width: 0; display: flex; flex-direction: column;
   padding: 11px 12px; width: 100%; cursor: pointer;
 }
 .cn-select:focus { outline: 2px solid var(--orange); outline-offset: 1px; }
+.seed-row { display: flex; gap: 8px; }
+.cn-input {
+  flex: 1; min-width: 0; font-family: var(--mono); font-weight: 600; font-size: 14px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--ink); border-radius: 10px; padding: 11px 12px;
+}
+.cn-input::placeholder { color: var(--faint); font-family: var(--arch); font-weight: 500; }
+.cn-input:focus { outline: none; border-color: var(--orange); box-shadow: inset 0 0 0 1px var(--orange); }
+#seed-dice {
+  flex: none; width: 44px; border: 1px solid var(--ink); border-radius: 10px; background: var(--card);
+  cursor: pointer; font-size: 17px; line-height: 1; transition: filter .12s ease;
+}
+#seed-dice:hover { filter: brightness(0.92); }
+.seed-current { display: block; font-family: var(--mono); font-size: 11px; color: var(--muted); min-height: 13px; margin-top: 5px; }
+.seed-current b { color: var(--orange); }
 
 #simulate-btn {
   cursor: pointer; border: 1px solid var(--ink); border-radius: 12px;

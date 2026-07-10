@@ -57,6 +57,14 @@
           <span class="k">FORMAT</span>
           <select id="format-select" class="cn-select"></select>
         </label>
+        <label class="field">
+          <span class="k">SEED <span style="color:var(--faint);text-transform:none;letter-spacing:0">— blank = random</span></span>
+          <div class="seed-row">
+            <input id="seed-input" class="cn-input" type="number" min="0" inputmode="numeric" placeholder="random each match">
+            <button id="seed-dice" type="button" title="Roll a random seed">&#127922;</button>
+          </div>
+          <span class="seed-current" id="seed-current"></span>
+        </label>
         <div style="display:flex;flex-direction:column;gap:10px">
           <button id="simulate-btn">&#9654;&#65038; Simulate Match</button>
           <div class="btn-pair">

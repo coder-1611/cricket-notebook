@@ -48,6 +48,7 @@ function init() {
 
   $("simulate-btn").onclick = () => runMatch();
   $("replay-btn").onclick = () => { if (state.match) runMatch(state.match.seed); };
+  $("seed-dice").onclick = () => { $("seed-input").value = randomSeed(); };
   $("rules-btn").onclick = openRules;
   $("rules-close-btn").onclick = closeRules;
   $("rules-modal").onclick = (e) => { if (e.target === $("rules-modal")) closeRules(); };
@@ -73,6 +74,7 @@ function init() {
   const linkSeed = q.get("seed") ? (parseInt(q.get("seed")) >>> 0) : null;
   if (q.get("format") && window.FORMATS[q.get("format")]) { fmtSel.value = q.get("format"); updateChip(); }
   if (q.get("stadium") && window.STADIUMS.some(s => s.id === q.get("stadium"))) { stadSel.value = q.get("stadium"); updateChip(); }
+  if (linkSeed != null) $("seed-input").value = linkSeed;
   if (q.get("auto")) {
     runMatch(linkSeed);
     if (q.get("to")) { const n = parseInt(q.get("to")); while (state.idx < Math.min(n, state.timeline.length - 1)) step(1); }
@@ -116,10 +118,18 @@ function randomSeed() {
 function runMatch(seedOverride) {
   pause();
   const format = window.FORMATS[$("format-select").value] || window.FORMATS.T20;
-  const seed = (seedOverride != null) ? (seedOverride >>> 0) : randomSeed();
+  // Seed priority: explicit override (Replay / deep-link) > typed seed > random.
+  let seed, source;
+  if (seedOverride != null) { seed = seedOverride >>> 0; source = "chosen"; }
+  else {
+    const raw = $("seed-input").value.trim();
+    if (raw !== "" && Number.isFinite(+raw)) { seed = (+raw) >>> 0; source = "chosen"; }
+    else { seed = randomSeed(); source = "random"; }
+  }
   const stadium = window.STADIUMS.find(x => x.id === $("stadium-select").value);
   const m = simulateMatch(T.India, T.Australia, { format, seed, stadium: stadium.name });
   state.match = m;
+  $("seed-current").innerHTML = `${source} &middot; now playing <b>#${seed}</b>`;
   state.timeline = [...m.innings[0].ballLog, ...m.innings[1].ballLog];
   state.idx = -1;
   $("live-area").classList.remove("hidden");
