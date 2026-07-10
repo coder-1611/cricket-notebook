@@ -77,14 +77,20 @@ Two spec mechanics interact with bowling changes to reproduce real tactics:
   batsman sitting on safe strikes can fall the **instant a much better bowler comes
   on** — no new strike needed. This is the engine's version of a captain throwing
   the ball to his ace to remove a dangerous, set batsman.
-* **Out by TOTAL strikes (the rating cap).** The second threshold — accumulated
-  strikes reaching the batsman's own rating — is independent of the bowler. When
-  the live average is *not strictly below* the cap (i.e. against equal or weaker
-  bowling), the dismissal is attributed to the cap and reported as
-  **"out — N total strikes"** in the scorecard and "reaches N TOTAL strikes" in
-  commentary. Measured across 500 seeds it accounts for **~2–3% of T20 wickets**
-  and **~8% of ODI wickets** (the ODI survival bonus keeps batsmen in long enough
-  for totals to accumulate) — rare by design against good bowling, but visible.
+* **Out by TOTAL strikes (the rating cap).** The cap is the batsman's **exact
+  batting rating** — a 10-rated batsman is out the moment they reach **10** total
+  strikes, in every format (the survival bonus below lifts only the average, never
+  the cap). It is reported as **"out — N total strikes"** in the scorecard and
+  "reaches N TOTAL strikes" in commentary. Its share of wickets is a *format
+  choice*:
+  * **ODI ≈ 85%** — this is the **primary** way an ODI wicket falls. The `+4`
+    average bonus sits above the cap for most match-ups, so batsmen almost always
+    reach their own rating in strikes before the live average catches them.
+  * **T20 ≈ 1%** — the cap is a hard *ceiling* (nobody survives past their rating),
+    but with no average bonus the live average is lower for good bowling and does
+    the day-to-day dismissing, keeping a 20-over innings to a realistic ~6 wickets.
+    (Forcing the cap to dominate T20 too would drop it to ~3 wickets — unrealistic
+    for the format, so it's deliberately left as a ceiling.)
 * **Match-ups / protecting a total.** A lower-rated (better) bowler pulls every
   batsman's average down, so concentrating your best bowling into the phases that
   matter (powerplay wickets, death squeeze) directly buys more dismissals.
@@ -104,7 +110,8 @@ out at over 37) rather than reaching a realistic 300/6.
 **Real cricket resolves this by tempo:** T20 batsmen attack almost every ball; ODI
 batsmen *build* — rotate strike, take fewer risks, and bat the full distance. We
 model that with a **per-format scoring profile** applied *after* the pure dice
-lookup (`applyProfile`), plus a **survival bonus** on the dismissal threshold.
+lookup (`applyProfile`) — runs *and* strike overrides — plus a **survival bonus**
+that lifts only the live-average dismissal threshold (never the rating cap).
 
 ### T20 profile — a light bowler-friendly trim
 
@@ -132,15 +139,20 @@ shape — plenty of fours, occasional sixes — survives:
 * **Fours preserved:** 4,5 → Four (untouched), 4,6 → one Four.
 * **Sixes rationed:** 6,6 → one six; the IA 1,6 reward → one six (`iaHi`);
   non-IA 1,6 → Double.
-* **Rotation damped:** several Doubles/Singles (2,6 / 1,4 / 1,3 / 2,4) → Dots and
-  (4,4 / 2,2 / 1,2) trimmed, pulling the middle-overs rate to ~5.7/over.
-* **Survival bonus `+4`:** added to *both* dismissal thresholds
-  (`cap = batting + 4`, `avg = floor((bat+bowl)/2) + 4`). ODI batsmen "set" and
-  survive far longer, so innings last close to the full 50 overs.
+* **Rotation damped:** the low rolls (2,6 / 2,4 / 1,5 / 1,4 / 1,3 / 2,2 / 1,2) →
+  Dots, pulling the middle-overs rate to ~5/over.
+* **Strike damping:** 5,6 (Strike → Dot) and 5,5 (Double Strike → single Strike),
+  so batsmen accumulate strikes slowly enough to bat the full 50 overs *before*
+  hitting their rating cap — otherwise every side is bowled out ~over 41 for ~262.
+* **Survival bonus `+4` on the average only:** `avg = floor((bat+bowl)/2) + 4`
+  while `cap = batting`. This lifts the average above the cap for most match-ups,
+  making the **total-strikes cap the dominant ODI dismissal (~85%)** while innings
+  still last close to the full 50 overs.
 
-**Result (600-seed sweep):** ODI first innings **mean ≈ 302**, with **~35 fours to
-~10 sixes (≈ 3.5:1 four:six ratio)** — the requested **"300-ish"** with a
-realistic boundary mix.
+**Result (600-seed sweep):** ODI first innings **mean ≈ 294, ~6–7 wickets, ~50
+overs**, with **~34 fours to ~10 sixes (≈ 3.3:1 four:six ratio)** — the requested
+**"300/6-ish"** with a realistic boundary mix, and total-strikes as the headline
+dismissal.
 
 ### Compound hits play across two balls
 

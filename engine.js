@@ -80,7 +80,11 @@ function resolveBall(pair, rating, ia) {
 // and the live average — ODI batsmen "set" longer so innings last the distance.
 function dismissalInfo(battingRating, bowlingRating, accumulatedStrikes, bonus) {
   bonus = bonus || 0;
-  const cap = battingRating + bonus;
+  // The rating cap is the batsman's EXACT batting rating (a 10-rated batsman is
+  // out at 10 total strikes, in every format). The format survival bonus applies
+  // ONLY to the live average, so it lengthens innings without ever letting a
+  // batsman survive past their own rating in accumulated strikes.
+  const cap = battingRating;
   const avg = Math.floor((battingRating + bowlingRating) / 2) + bonus;
   const threshold = Math.min(cap, avg);
   // When the live average is NOT strictly below the cap, the batsman falls by
@@ -115,21 +119,32 @@ var SCORING_PROFILES = {
   // ODI: heavier boundary damping (run rate ~6) + a survival bonus so a side
   // bats deep into the 50 overs rather than being bowled out early.
   ODI: {
+    // The survival bonus lifts only the LIVE AVERAGE (the cap is the batsman's
+    // exact rating, format-independent). At +4 the average sits above the cap for
+    // most match-ups, so batsmen mostly fall by reaching their TOTAL strike count
+    // (~85% of ODI wickets) — the rating cap is the dominant dismissal here.
     thresholdBonus: 4,
     runs: {
       // Keep genuine FOURS in the game (4,5 stays 4; 4,6 -> one four) so an ODI
-      // has ~35 fours to ~10 sixes (a ~3.5:1 four:six ratio), then dot-trim the
+      // has ~34 fours to ~10 sixes (a ~3.3:1 four:six ratio), then dot-trim the
       // low rolls so the run rate settles near 6/over and the mean lands ~300.
       "4,6": { hi: 4 },              // two 4s (8) -> one FOUR (4)
       "4,4": { hi: 2, lo: 2 },       // two 4s (8) -> Double
       "1,6": { hi: 2, iaHi: 6 },     // non-IA -> Double; IA two-sixes -> one SIX
       "6,6": { hi: 6 },              // two sixes (12) -> one SIX
       "2,6": { hi: 0, lo: 0 },       // Double -> Dot
+      "1,5": { hi: 0, lo: 0 },       // Single -> Dot
       "1,4": { hi: 0, lo: 0 },       // Single -> Dot
       "1,3": { hi: 0, lo: 0 },       // Single -> Dot
       "2,4": { hi: 0, lo: 0 },       // Double -> Dot
-      "2,2": { hi: 1, lo: 1 },       // Double -> Single
-      "1,2": { hi: 1, lo: 1, skipIA: true }
+      "2,2": { hi: 0, lo: 0 },       // Double -> Dot
+      "1,2": { hi: 0, lo: 0, skipIA: true }
+    },
+    // Slow the strike accumulation so a full 50-over innings gets there before
+    // everyone reaches their cap — keeps ODI at ~300/6-7 instead of ~262 all out.
+    strikes: {
+      "5,6": { hi: 0, lo: 0 },       // Strike -> Dot
+      "5,5": { hi: 1, lo: 1 }        // Double Strike -> single Strike
     },
     // Powerplay & Death: the dot-trimmed low rolls come alive again.
     boost: {

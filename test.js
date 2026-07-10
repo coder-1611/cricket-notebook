@@ -72,14 +72,22 @@ const prof = (base, pair, high, ia, key) => e.applyProfile(base, pair, high, ia,
 // T20: 4,6 >5 two-4s(8) -> 4 ; 1,6 >5 IA reward preserved (12)
 eq(prof(e.resolveBall([4, 6], 8, false), [4, 6], true, false, "T20").runs, 4, "T20 4,6>5 -> 4 runs");
 eq(prof(e.resolveBall([1, 6], 8, true), [1, 6], true, true, "T20").runs, 12, "T20 1,6>5 IA reward preserved");
-// ODI: 6,6 >5 12 -> 6 ; 2,2 -> 1 ; 4,4 -> 2 ; fours survive (4,5 / 4,6) ; survival bonus raises threshold
+// ODI: 6,6 >5 12 -> 6 ; 4,4 -> 2 ; fours survive (4,5 / 4,6) ; strike-damp on 5,6 & 5,5
 eq(prof(e.resolveBall([6, 6], 8, false), [6, 6], true, false, "ODI").runs, 6, "ODI 6,6>5 -> 6 runs");
-eq(prof(e.resolveBall([2, 2], 8, false), [2, 2], true, false, "ODI").runs, 1, "ODI 2,2 -> 1 run");
+eq(prof(e.resolveBall([2, 2], 8, false), [2, 2], true, false, "ODI").runs, 0, "ODI 2,2 -> Dot");
 eq(prof(e.resolveBall([4, 4], 3, false), [4, 4], false, false, "ODI").runs, 2, "ODI 4,4 -> 2 runs");
 eq(prof(e.resolveBall([4, 6], 8, false), [4, 6], true, false, "ODI").runs, 4, "ODI 4,6>5 -> FOUR kept");
 eq(prof(e.resolveBall([4, 5], 8, false), [4, 5], true, false, "ODI").runs, 4, "ODI 4,5 -> FOUR untouched");
 eq(prof(e.resolveBall([1, 6], 8, true), [1, 6], true, true, "ODI").runs, 6, "ODI 1,6 IA -> one SIX (iaHi)");
-eq(e.dismissalInfo(7, 7, 0, 4).threshold, 11, "ODI survival bonus +4 on threshold");
+eq(prof(e.resolveBall([5, 6], 8, false), [5, 6], true, false, "ODI").strikes, 0, "ODI 5,6 strike -> dot");
+eq(prof(e.resolveBall([5, 5], 8, false), [5, 5], true, false, "ODI").strikes, 1, "ODI 5,5 double-strike -> single");
+
+// The rating cap is the EXACT batting rating (format-independent); the survival
+// bonus lifts only the live average.
+eq(e.dismissalInfo(10, 1, 0, 0).cap, 10, "cap = batting rating (T20, no bonus)");
+eq(e.dismissalInfo(10, 1, 0, 4).cap, 10, "cap = batting rating (ODI bonus does NOT raise cap)");
+eq(e.dismissalInfo(10, 1, 0, 4).avg, 9, "ODI bonus +4 lifts the live average only (floor((10+1)/2)+4)");
+eq(e.dismissalInfo(10, 2, 0, 4).which, "cap", "ODI: avg>=cap -> falls by TOTAL strikes");
 
 // ---- Powerplay/Death boost layer ----
 const bprof = (pair, r, ia, key, phase) =>
