@@ -1,0 +1,237 @@
+<title>Cricket Notebook — Season Records</title>
+<style>
+  :root{
+    --paper:#F3EDDF; --card:#FFFDF6; --sunk:#EFE7D5;
+    --ink:#211C13; --ink2:#4E4636; --muted:#7C7160; --faint:#B4A88F; --rule:#E4DBC6;
+    --orange:#C43D0C; --orange-soft:#F6E2D5; --purple:#6E2C93; --purple-soft:#ECE0F2;
+    --gold:#C88A00; --blue:#1849C6; --green:#3E7A46;
+    --sans:"Helvetica Neue",-apple-system,system-ui,Arial,sans-serif;
+    --serif:Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
+    --shadow:6px 6px 0 rgba(33,28,19,.13);
+    --shadow-sm:4px 4px 0 rgba(33,28,19,.11);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#171310; --card:#221d16; --sunk:#1c1712;
+      --ink:#F3EDDF; --ink2:#cfc6b4; --muted:#9c907c; --faint:#6b6151; --rule:#33291f;
+      --orange:#ec6a34; --orange-soft:#3a1d10; --purple:#c07de0; --purple-soft:#2a1636;
+      --gold:#e0a83a; --blue:#6f92ee; --green:#68ab70;
+      --shadow:6px 6px 0 rgba(0,0,0,.4); --shadow-sm:4px 4px 0 rgba(0,0,0,.34);
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#F3EDDF; --card:#FFFDF6; --sunk:#EFE7D5; --ink:#211C13; --ink2:#4E4636;
+    --muted:#7C7160; --faint:#B4A88F; --rule:#E4DBC6; --orange:#C43D0C; --orange-soft:#F6E2D5;
+    --purple:#6E2C93; --purple-soft:#ECE0F2; --gold:#C88A00; --blue:#1849C6; --green:#3E7A46;
+    --shadow:6px 6px 0 rgba(33,28,19,.13); --shadow-sm:4px 4px 0 rgba(33,28,19,.11);
+  }
+  :root[data-theme="dark"]{
+    --paper:#171310; --card:#221d16; --sunk:#1c1712; --ink:#F3EDDF; --ink2:#cfc6b4;
+    --muted:#9c907c; --faint:#6b6151; --rule:#33291f; --orange:#ec6a34; --orange-soft:#3a1d10;
+    --purple:#c07de0; --purple-soft:#2a1636; --gold:#e0a83a; --blue:#6f92ee; --green:#68ab70;
+    --shadow:6px 6px 0 rgba(0,0,0,.4); --shadow-sm:4px 4px 0 rgba(0,0,0,.34);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(124,113,96,.10) 1px,transparent 1px);
+    background-size:100% 44px;
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 22px 72px;}
+  .mono{font-family:var(--mono); font-variant-numeric:tabular-nums;}
+
+  /* header */
+  header{display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+    flex-wrap:wrap; padding:34px 0 20px; border-bottom:3px solid var(--ink);}
+  .brand{display:flex; align-items:center; gap:15px;}
+  .ball{width:46px; height:46px; border-radius:50%; flex:none; position:relative; overflow:hidden;
+    background:radial-gradient(circle at 32% 28%,#e6602a,#a82c07 70%);
+    box-shadow:inset -5px -7px 12px rgba(50,8,0,.5);}
+  .ball::after{content:""; position:absolute; left:50%; top:-6px; bottom:-6px; width:0;
+    border-left:2px dashed rgba(255,246,230,.85); transform:rotate(19deg);}
+  h1{margin:0; font-size:34px; font-weight:800; letter-spacing:-.5px; text-transform:uppercase; line-height:1;}
+  h1 em{font-family:var(--serif); font-style:italic; font-weight:500; color:var(--orange); text-transform:none; letter-spacing:0;}
+  .kick{font-family:var(--mono); font-size:10.5px; letter-spacing:2px; color:var(--muted); margin-top:6px;}
+  .toggle{display:inline-flex; border:1.5px solid var(--ink); border-radius:11px; overflow:hidden; background:var(--card);}
+  .toggle button{appearance:none; border:none; background:none; cursor:pointer; font-family:var(--sans);
+    font-weight:800; font-size:14px; letter-spacing:.5px; color:var(--ink2); padding:10px 20px;}
+  .toggle button[aria-pressed="true"]{background:var(--ink); color:var(--paper);}
+
+  .note{font-family:var(--mono); font-size:11.5px; color:var(--muted); margin:18px 0 2px; letter-spacing:.3px;}
+  .note b{color:var(--ink);}
+
+  /* record strip */
+  .records{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:14px;}
+  .rec{background:var(--card); border:1px solid var(--ink); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow-sm);}
+  .rec .lab{font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--muted);}
+  .rec .big{font-size:34px; font-weight:800; letter-spacing:-1px; margin:7px 0 2px; line-height:1;}
+  .rec .who{font-size:14px; font-weight:700;}
+  .rec .sub{font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:3px;}
+  .rec.bat .big{color:var(--orange);} .rec.bowl .big{color:var(--purple);} .rec.tot .big{color:var(--gold);}
+
+  /* cap cards */
+  .caps{display:flex; flex-direction:column; gap:22px; margin-top:24px;}
+  .cap{background:var(--card); border:1px solid var(--ink); border-radius:16px; overflow:hidden; box-shadow:var(--shadow);}
+  .cap-hd{display:flex; align-items:center; gap:14px; padding:16px 20px; color:#fff;}
+  .cap.orange .cap-hd{background:var(--orange);} .cap.purple .cap-hd{background:var(--purple);}
+  .cap-hd svg{flex:none;}
+  .cap-hd .t{font-size:20px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; line-height:1;}
+  .cap-hd .s{font-family:var(--mono); font-size:11px; letter-spacing:1.5px; opacity:.85; margin-top:3px;}
+  .cap-hd .spacer{flex:1;}
+  .cap-hd .metric{font-family:var(--serif); font-style:italic; font-size:15px; opacity:.92;}
+
+  .tbl-scroll{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-variant-numeric:tabular-nums; min-width:640px;}
+  thead th{font-size:10px; letter-spacing:1.2px; color:var(--muted); text-transform:uppercase; font-weight:600;
+    text-align:right; padding:11px 10px; border-bottom:2px solid var(--ink); white-space:nowrap;}
+  thead th:first-child,thead th:nth-child(2){text-align:left;}
+  tbody td{padding:11px 10px; border-bottom:1px dotted var(--rule); text-align:right; font-size:13px; white-space:nowrap;}
+  tbody td:first-child,tbody td:nth-child(2){text-align:left;}
+  tbody tr:hover{background:var(--sunk);}
+  .pos{color:var(--faint); width:26px; font-size:12px;}
+  .pl{font-family:var(--sans); font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.3px;}
+  .dot{width:8px; height:8px; border-radius:2px; flex:none;}
+  .dot.IND{background:var(--blue);} .dot.AUS{background:var(--gold);}
+  .lead td{background:color-mix(in srgb,var(--accent) 12%,transparent);}
+  .cap.orange{--accent:var(--orange);} .cap.purple{--accent:var(--purple);}
+  .lead .pl{color:var(--accent);}
+  .hl{color:var(--ink); font-weight:700;} /* the headline column */
+  .muted{color:var(--muted);}
+  .crown{font-family:var(--serif); font-style:italic;}
+
+  footer{margin-top:30px; font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.7;}
+  footer b{color:var(--ink);}
+  @media (max-width:720px){
+    .records{grid-template-columns:1fr;}
+    h1{font-size:26px;}
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="ball"></div>
+      <div>
+        <h1>Season <em>Records</em></h1>
+        <div class="kick">INDIA vs AUSTRALIA · DICE-CRICKET · CAREER TABLES</div>
+      </div>
+    </div>
+    <div class="toggle" role="group" aria-label="Format">
+      <button id="t-T20" aria-pressed="true" onclick="pick('T20')">T20</button>
+      <button id="t-ODI" aria-pressed="false" onclick="pick('ODI')">ODI</button>
+    </div>
+  </header>
+
+  <div class="note" id="scope"></div>
+
+  <section class="records" id="records"></section>
+
+  <div class="caps">
+    <div class="cap orange">
+      <div class="cap-hd">
+        <span id="cap-orange"></span>
+        <div>
+          <div class="t">Orange Cap</div>
+          <div class="s">MOST RUNS</div>
+        </div>
+        <span class="spacer"></span>
+        <span class="metric">the run machine</span>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th></th><th>Batsman</th><th>Inns</th><th>Runs</th><th>HS</th><th>Avg</th><th>SR</th><th>100s</th><th>50s</th><th>4s</th><th>6s</th>
+          </tr></thead>
+          <tbody id="orange-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cap purple">
+      <div class="cap-hd">
+        <span id="cap-purple"></span>
+        <div>
+          <div class="t">Purple Cap</div>
+          <div class="s">MOST WICKETS</div>
+        </div>
+        <span class="spacer"></span>
+        <span class="metric">the strike bowler</span>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th></th><th>Bowler</th><th>Inns</th><th>Overs</th><th>Wkts</th><th>Best</th><th>Avg</th><th>Econ</th><th>SR</th><th>5W</th>
+          </tr></thead>
+          <tbody id="purple-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const DATA = {"T20":{"seeds":164863,"elapsed":27.1,"rec":{"bat":{"name":"Sunil Gavaskar","team":"IND","runs":194,"balls":67,"no":true,"f4":24,"f6":12,"seed":119547},"bowl":{"name":"Glenn McGrath","team":"AUS","w":8,"r":8,"overs":"3.0","seed":153158},"tot":{"team":"Australia","total":334,"wkts":3,"overs":"20.0","seed":93599}},"orange":[{"name":"Matthew Hayden","team":"AUS","inns":164863,"runs":5870025,"hs":"183*","avg":35.9,"sr":171.6,"h":1032,"f":35034,"f4":826505,"f6":194619},{"name":"Don Bradman","team":"AUS","inns":164814,"runs":5817250,"hs":"149*","avg":37.3,"sr":159,"h":558,"f":34613,"f4":685979,"f6":196373},{"name":"Sunil Gavaskar","team":"IND","inns":164863,"runs":5508898,"hs":"194*","avg":33.6,"sr":171.3,"h":1020,"f":30913,"f4":776655,"f6":181339},{"name":"Sachin Tendulkar","team":"IND","inns":164844,"runs":5376452,"hs":"147*","avg":34.1,"sr":160.9,"h":587,"f":28783,"f4":660709,"f6":178677},{"name":"Ricky Ponting","team":"AUS","inns":164297,"runs":5298111,"hs":"143*","avg":37.8,"sr":156.2,"h":267,"f":26193,"f4":595959,"f6":178564},{"name":"David Warner","team":"AUS","inns":164863,"runs":5295335,"hs":"168*","avg":32.3,"sr":195.6,"h":1221,"f":30418,"f4":520323,"f6":390230},{"name":"Virat Kohli","team":"IND","inns":164561,"runs":5110960,"hs":"140*","avg":35.5,"sr":156.6,"h":328,"f":25624,"f4":578656,"f6":171696},{"name":"Rahul Dravid","team":"IND","inns":162078,"runs":4593046,"hs":"132*","avg":40.3,"sr":159.1,"h":80,"f":18012,"f4":544379,"f6":153137}],"purple":[{"name":"Shane Warne","team":"AUS","inns":164863,"overs":658315,"wkts":324824,"best":"8/11","avg":18.9,"econ":9.3,"sr":12.2,"fiveW":1238},{"name":"Glenn McGrath","team":"AUS","inns":164863,"overs":631318,"wkts":299643,"best":"8/8","avg":22.7,"econ":10.76,"sr":12.6,"fiveW":3086},{"name":"Jasprit Bumrah","team":"IND","inns":164863,"overs":633792,"wkts":286474,"best":"8/11","avg":23.6,"econ":10.66,"sr":13.3,"fiveW":3644},{"name":"Anil Kumble","team":"IND","inns":164857,"overs":657862,"wkts":238384,"best":"8/40","avg":25.8,"econ":9.34,"sr":16.6,"fiveW":39},{"name":"Dennis Lillee","team":"AUS","inns":164863,"overs":615113,"wkts":155936,"best":"6/11","avg":42.8,"econ":10.84,"sr":23.7,"fiveW":197},{"name":"Brett Lee","team":"AUS","inns":164863,"overs":659376,"wkts":141339,"best":"5/20","avg":47,"econ":10.08,"sr":28,"fiveW":4},{"name":"Ravindra Jadeja","team":"IND","inns":164847,"overs":656388,"wkts":137079,"best":"5/14","avg":44.6,"econ":9.31,"sr":28.7,"fiveW":6},{"name":"Kapil Dev","team":"IND","inns":164863,"overs":610324,"wkts":107433,"best":"6/39","avg":61.1,"econ":10.76,"sr":34.1,"fiveW":18}]},"ODI":{"seeds":67583,"elapsed":27.3,"rec":{"bat":{"name":"Matthew Hayden","team":"AUS","runs":180,"balls":133,"no":false,"f4":22,"f6":10,"seed":5340},"bowl":{"name":"Zaheer Khan","team":"IND","w":6,"r":19,"overs":"7.5","seed":41367},"tot":{"team":"India","total":425,"wkts":7,"overs":"50.0","seed":1356}},"orange":[{"name":"David Warner","team":"AUS","inns":67583,"runs":3243570,"hs":"153","avg":48,"sr":133,"h":490,"f":28626,"f4":319668,"f6":204280},{"name":"Matthew Hayden","team":"AUS","inns":67583,"runs":3229294,"hs":"180","avg":47.8,"sr":102.9,"h":602,"f":28186,"f4":407531,"f6":87226},{"name":"Sunil Gavaskar","team":"IND","inns":67583,"runs":3226844,"hs":"177","avg":47.7,"sr":103,"h":594,"f":28072,"f4":406802,"f6":87373},{"name":"Vaibhav Suryavanshi","team":"IND","inns":67583,"runs":2915651,"hs":"164*","avg":43.1,"sr":134.7,"h":201,"f":21833,"f4":288014,"f6":179631},{"name":"Don Bradman","team":"AUS","inns":67583,"runs":2803605,"hs":"156","avg":41.7,"sr":82.1,"h":328,"f":19599,"f4":384454,"f6":94650},{"name":"Ricky Ponting","team":"AUS","inns":67581,"runs":2727396,"hs":"147*","avg":41.2,"sr":81.3,"h":296,"f":18326,"f4":374426,"f6":93462},{"name":"Sachin Tendulkar","team":"IND","inns":67583,"runs":2709887,"hs":"159*","avg":40.2,"sr":82.9,"h":325,"f":18106,"f4":369565,"f6":90847},{"name":"Steve Smith","team":"AUS","inns":67462,"runs":2707562,"hs":"130*","avg":50.4,"sr":87.7,"h":161,"f":18562,"f4":361556,"f6":86005}],"purple":[{"name":"Shane Warne","team":"AUS","inns":67583,"overs":675801,"wkts":116719,"best":"5/18","avg":28.6,"econ":4.94,"sr":34.7,"fiveW":6},{"name":"Jasprit Bumrah","team":"IND","inns":67583,"overs":655944,"wkts":98988,"best":"6/33","avg":46.8,"econ":7.06,"sr":39.8,"fiveW":314},{"name":"Anil Kumble","team":"IND","inns":67583,"overs":675796,"wkts":86334,"best":"4/17","avg":39,"econ":4.98,"sr":47,"fiveW":0},{"name":"Ravindra Jadeja","team":"IND","inns":67583,"overs":675775,"wkts":85646,"best":"4/16","avg":39.1,"econ":4.95,"sr":47.3,"fiveW":0},{"name":"Glenn McGrath","team":"AUS","inns":67583,"overs":652116,"wkts":82175,"best":"6/35","avg":57.2,"econ":7.21,"sr":47.6,"fiveW":94},{"name":"Dennis Lillee","team":"AUS","inns":67583,"overs":644721,"wkts":80615,"best":"6/35","avg":53.2,"econ":6.65,"sr":48,"fiveW":140},{"name":"Zaheer Khan","team":"IND","inns":67583,"overs":505832,"wkts":59065,"best":"6/19","avg":53.9,"econ":6.3,"sr":51.4,"fiveW":70},{"name":"Brett Lee","team":"AUS","inns":67583,"overs":675562,"wkts":58526,"best":"5/32","avg":62.7,"econ":5.43,"sr":69.3,"fiveW":3}]}};
+
+const cap = (fill) => `<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true">
+  <path d="M6 26 C6 15 13 9 20 9 C27 9 34 15 34 24 L34 26 Z" fill="#fff" opacity=".92"/>
+  <path d="M4 26 C4 24 6 23 9 23 L34 23 C36 23 37 24 37 26 C37 28 35 29 32 29 L8 29 C6 29 4 28 4 26 Z" fill="#fff" opacity=".72"/>
+  <circle cx="20" cy="10.5" r="2" fill="#fff"/>
+</svg>`;
+
+const C = (n) => Number(n).toLocaleString();
+
+function pick(fmt){
+  ["T20","ODI"].forEach(f=>document.getElementById("t-"+f).setAttribute("aria-pressed", String(f===fmt)));
+  const d = DATA[fmt];
+  document.getElementById("scope").innerHTML =
+    `Aggregated over <b>${C(d.seeds)}</b> ${fmt} matches (seeds 1&ndash;${C(d.seeds)}, simulated in ${d.elapsed}s). Runs, wickets &amp; boundaries are career totals; Avg / SR / Econ are per-innings.`;
+
+  const r = d.rec;
+  document.getElementById("records").innerHTML = `
+    <div class="rec bat"><div class="lab">BEST BATTING (INNINGS)</div>
+      <div class="big">${r.bat.runs}${r.bat.no?"*":""}</div>
+      <div class="who">${r.bat.name}</div>
+      <div class="sub">${r.bat.balls} balls · ${r.bat.f4}×4 ${r.bat.f6}×6 · seed ${C(r.bat.seed)}</div></div>
+    <div class="rec bowl"><div class="lab">BEST BOWLING (INNINGS)</div>
+      <div class="big">${r.bowl.w}/${r.bowl.r}</div>
+      <div class="who">${r.bowl.name}</div>
+      <div class="sub">${r.bowl.overs} overs · seed ${C(r.bowl.seed)}</div></div>
+    <div class="rec tot"><div class="lab">HIGHEST TOTAL</div>
+      <div class="big">${r.tot.total}/${r.tot.wkts}</div>
+      <div class="who">${r.tot.team}</div>
+      <div class="sub">${r.tot.overs} overs · seed ${C(r.tot.seed)}</div></div>`;
+
+  document.getElementById("orange-body").innerHTML = d.orange.map((p,i)=>`
+    <tr class="${i===0?"lead":""}">
+      <td class="pos">${i===0?'<span class="crown">1</span>':i+1}</td>
+      <td><span class="pl"><span class="dot ${p.team}"></span>${p.name}</span></td>
+      <td class="muted">${C(p.inns)}</td>
+      <td class="hl">${C(p.runs)}</td>
+      <td>${p.hs}</td><td>${p.avg}</td><td>${p.sr}</td>
+      <td class="muted">${C(p.h)}</td><td class="muted">${C(p.f)}</td>
+      <td class="muted">${C(p.f4)}</td><td class="muted">${C(p.f6)}</td>
+    </tr>`).join("");
+
+  document.getElementById("purple-body").innerHTML = d.purple.map((p,i)=>`
+    <tr class="${i===0?"lead":""}">
+      <td class="pos">${i===0?'<span class="crown">1</span>':i+1}</td>
+      <td><span class="pl"><span class="dot ${p.team}"></span>${p.name}</span></td>
+      <td class="muted">${C(p.inns)}</td>
+      <td class="muted">${C(p.overs)}</td>
+      <td class="hl">${C(p.wkts)}</td>
+      <td>${p.best}</td><td>${p.avg}</td><td>${p.econ}</td><td>${p.sr}</td>
+      <td class="muted">${C(p.fiveW)}</td>
+    </tr>`).join("");
+}
+
+document.getElementById("cap-orange").innerHTML = cap();
+document.getElementById("cap-purple").innerHTML = cap();
+document.getElementById("foot").innerHTML =
+  `<b>How to read it</b> &mdash; every match is India vs Australia with the fixed legend lineups, so all 22 players appear in every game; "career" totals are the sum across all simulated innings. Best batting / bowling / highest total are single-innings peaks &mdash; punch the seed into the app (<span class="mono">?seed=&lt;n&gt;&amp;format=&lt;T20|ODI&gt;</span>) to replay that exact match.<br><b>Method</b> &mdash; a time-budgeted sweep of the real engine (~27s per format): T20 reached seed 164,863, ODI reached 67,583. A full 1,000,000-seed run takes ~10 minutes.`;
+
+pick('T20');
+</script>
