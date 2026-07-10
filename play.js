@@ -387,7 +387,7 @@
       else if (e.runs) { badge = "dot"; btxt = e.runs; }
       else { badge = "dot"; btxt = "·"; }
       d.innerHTML = `
-        <span class="ov">${e.over}.${e.ballInOver}</span>
+        <span class="ov">${e.over - 1}.${e.ballInOver}</span>
         <span class="tx">${esc(commentaryFor(e))}</span>
         <span class="badge ${badge}">${btxt}</span>`;
       f.appendChild(d);
