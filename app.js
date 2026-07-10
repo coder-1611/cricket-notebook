@@ -129,7 +129,8 @@ function runMatch(seedOverride) {
   const stadium = window.STADIUMS.find(x => x.id === $("stadium-select").value);
   const m = simulateMatch(T.India, T.Australia, { format, seed, stadium: stadium.name });
   state.match = m;
-  $("seed-current").innerHTML = `${source} &middot; now playing <b>#${seed}</b>`;
+  // Only surface the seed when it was deliberately chosen; keep random matches a mystery.
+  $("seed-current").innerHTML = source === "chosen" ? `now playing <b>#${seed}</b>` : "";
   state.timeline = [...m.innings[0].ballLog, ...m.innings[1].ballLog];
   state.idx = -1;
   $("live-area").classList.remove("hidden");
