@@ -105,6 +105,24 @@ for (const fmt of [T.FORMATS.T20, T.FORMATS.ODI]) {
     const i2 = m.innings[1];
     if (i2.total >= m.target && m.result.type !== "chase") fails.push(`${fmt.key} seed ${s}: chase result wrong`), fail++;
     if (m.result.type === "tie") ties++;
+
+    // ---- compound (two-sixes / two-fours) split-across-two-balls invariants ----
+    for (const inn of m.innings) {
+      const bs = inn.ballLog.reduce((sum, b) => sum + b.runs, 0);
+      if (bs !== inn.total) fails.push(`${fmt.key} seed ${s} inn${inn.inningNo}: ballsum ${bs} != total ${inn.total}`), fail++;
+      inn.ballLog.forEach((b, i) => {
+        // an un-split TWO SIXES/TWO FOURS may only appear on the final ball of the innings
+        if ((b.label === "TWO SIXES" || b.label === "TWO FOURS") && i !== inn.ballLog.length - 1)
+          fails.push(`${fmt.key} seed ${s}: un-split compound mid-innings`), fail++;
+        // a compound first-half is followed by its second-half unless the innings ended right after
+        if (b.compound === "first") {
+          const nxt = inn.ballLog[i + 1];
+          if (nxt && nxt.compound !== "second") fails.push(`${fmt.key} seed ${s}: first not followed by second`), fail++;
+          // a split half is only ever worth 6 (SIX) or 4 (FOUR), never the compound 12/8
+          if (b.runs !== 6 && b.runs !== 4) fails.push(`${fmt.key} seed ${s}: split first half worth ${b.runs}`), fail++;
+        }
+      });
+    }
   }
 }
 if (seedsChecked === 300) pass++; else fail++;

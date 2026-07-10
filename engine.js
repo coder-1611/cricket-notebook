@@ -269,6 +269,12 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
   const fow = []; // fall of wickets
   const overSummaries = [];
   let ended = false, chaseWon = false;
+  // A "two sixes"/"two fours" roll is played across TWO deliveries: the first
+  // half is scored now, the second half is held here and delivered on the next
+  // ball. Because the innings-level end-of-over swap happens in between, a
+  // compound rolled on the last ball of an over lands its second hit on the
+  // OTHER batsman (they're on strike for the next over). Persists across overs.
+  let pendingHit = null; // { runs, kind:'SIX'|'FOUR', pair, branch, fromStriker }
 
   function creditBowlerWicket(bIdx) { bowlerStats[bIdx].wickets++; }
 
@@ -280,7 +286,9 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
 
     // Live-average walk-off check when a new bowler comes on (no ball needed):
     // a set batsman can fall the instant a much better bowler starts the over.
-    for (const cIdx of [strikerIdx, nonStrikerIdx]) {
+    // (Skip when a compound's second hit is pending — that ball is already
+    // "in flight" from the previous over's roll and must be delivered first.)
+    for (const cIdx of pendingHit ? [] : [strikerIdx, nonStrikerIdx]) {
       if (cIdx == null || cards[cIdx].out) continue;
       const c = cards[cIdx];
       const di = dismissalInfo(c.battingRating, bowlingRating, c.strikes, bonus);
@@ -323,9 +331,29 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
     for (let bib = 0; bib < 6 && !ended; bib++) {
       const striker = cards[strikerIdx];
       const bstat = bowlerStats[bowlerIdx];
-      const d1 = rollDie(rng), d2 = rollDie(rng);
-      const res = applyProfile(resolveBall([d1, d2], striker.battingRating, striker.ia),
-        [d1, d2], striker.battingRating > 5, striker.ia, profile, phaseName);
+      const lastBallOfInnings = (over === totalOvers - 1 && bib === 5);
+      let d1, d2, res, compound = null;
+
+      if (pendingHit) {
+        // second half of a compound — no new roll; goes to whoever is on strike
+        d1 = pendingHit.pair[0]; d2 = pendingHit.pair[1];
+        res = { runs: pendingHit.runs, strikes: 0, label: pendingHit.kind, big: true, iaApplied: false, branch: pendingHit.branch };
+        compound = { part: "second", toOther: striker.name !== pendingHit.fromStriker };
+        pendingHit = null;
+      } else {
+        d1 = rollDie(rng); d2 = rollDie(rng);
+        res = applyProfile(resolveBall([d1, d2], striker.battingRating, striker.ia),
+          [d1, d2], striker.battingRating > 5, striker.ia, profile, phaseName);
+        // "Two sixes"/"Two fours" are split across two deliveries — unless this
+        // is the very last ball of the innings (no next ball to carry it to).
+        if (!lastBallOfInnings && (res.label === "TWO SIXES" || res.label === "TWO FOURS")) {
+          const kind = res.label === "TWO SIXES" ? "SIX" : "FOUR";
+          const half = res.label === "TWO SIXES" ? 6 : 4;
+          pendingHit = { runs: half, kind, pair: [d1, d2], branch: res.branch, fromStriker: striker.name };
+          res = { runs: half, strikes: 0, label: kind, big: true, iaApplied: res.iaApplied, branch: res.branch };
+          compound = { part: "first", toOther: false };
+        }
+      }
 
       // apply runs
       striker.runs += res.runs; striker.balls++;
@@ -351,7 +379,9 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
         fow.push({ wicket: wickets, score: total, over, ball: bib + 1, batsman: striker.name });
       }
 
-      const commentary = makeCommentary(res, striker, di, wicket, [d1, d2]);
+      const commentary = compound
+        ? compoundCommentary(compound, res, striker, [d1, d2])
+        : makeCommentary(res, striker, di, wicket, [d1, d2]);
       const partner = (nonStrikerIdx != null) ? cards[nonStrikerIdx] : null;
       const pdi = partner ? dismissalInfo(partner.battingRating, bowlingRating, partner.strikes, bonus) : null;
       ballLog.push({
@@ -361,6 +391,7 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
         phase: phaseName,
         pair: [d1, d2], iaApplied: res.iaApplied,
         branch: res.branch, label: res.label, runs: res.runs, strikes: res.strikes,
+        compound: compound ? compound.part : null, compoundToOther: compound ? compound.toOther : false,
         totalStrikes: striker.strikes, capThreshold: di.cap, avgThreshold: di.avg, threshold: di.threshold,
         wicket, outMethod, teamScore: total, wickets, big: res.big, commentary,
         // crease snapshot (for live playback rendering)
@@ -429,6 +460,19 @@ function makeCommentary(res, striker, di, wicket, pair) {
   if (res.runs === 1) return `${dice} Quick single, ${who} rotates strike.`;
   if (res.runs === 2) return `${dice} Two more for ${who}.`;
   return `${dice} ${res.runs} to ${who}.`;
+}
+
+// Commentary for a compound hit that is split across two deliveries.
+function compoundCommentary(compound, res, striker, pair) {
+  const dice = `[${pair[0]}–${pair[1]}]`;
+  const shot = res.runs === 6 ? "SIX" : "FOUR";
+  if (compound.part === "first") {
+    return `${dice} ${shot}! ${striker.name} launches it — first of a two-${shot.toLowerCase()} blow off one roll. The second is still to come.`;
+  }
+  if (compound.toOther) {
+    return `${shot} again! End of the over swaps the ends, so it's ${striker.name} — the new man on strike — who banks the second ${shot.toLowerCase()} of the pair.`;
+  }
+  return `${shot} again! ${striker.name} doubles up — the second ${shot.toLowerCase()} of the pair.`;
 }
 
 // ----------------------------------------------------------------------------

@@ -142,6 +142,26 @@ shape — plenty of fours, occasional sixes — survives:
 ~10 sixes (≈ 3.5:1 four:six ratio)** — the requested **"300-ish"** with a
 realistic boundary mix.
 
+### Compound hits play across two balls
+
+A roll that resolves to **two sixes** or **two fours** is not one 12/8-run ball —
+it is scored as **two separate deliveries**, one hit each, in sequence:
+
+* **Mid-over:** both hits go to the same striker (6+6 / 4+4 are even, so no strike
+  rotation between them).
+* **On the last ball of an over:** the first hit is that over's 6th ball; the
+  end-of-over swap then puts the **other batsman** on strike, and they bank the
+  second hit as the first ball of the next over. (Verified: ~16% of compounds land
+  their second hit on the non-striker.)
+* **In a chase:** the innings ends the instant the target is passed, so if the
+  first hit wins it, **the second is never played** (e.g. needing 6, a 6,6 roll
+  wins on the first six — final score +6, not +12).
+* **On the final ball of an innings** there is no next delivery to carry to, so the
+  compound is scored whole (12/8) on that ball.
+
+Each half is its own ball-log entry (`compound: "first" | "second"`,
+`compoundToOther`), so balls faced, bowler figures, and the worm all stay honest.
+
 ### Powerplay & Death run boost
 
 Real innings aren't flat: sides attack the fielding restrictions up front and slog

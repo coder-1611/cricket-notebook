@@ -598,6 +598,7 @@ function renderRulesBody() {
     <p><b>Two currencies.</b> Runs go on the board; <b style="color:var(--orange)">strikes</b> stack on the batsman for the whole innings and never reset.</p>
     <p><b>Two ways out.</b> Reach your own batting rating in total strikes (&ldquo;out &mdash; N total strikes&rdquo;), or cross the <b>live average</b> &mdash; &lfloor;(batting&nbsp;+&nbsp;bowler&rsquo;s rating)&thinsp;/&thinsp;2&rfloor; against whoever is bowling right now. Great bowlers drag the average down; a set batsman can fall the instant one comes on.</p>
     <p><b>Phases matter.</b> Pace attacks the powerplay, spin squeezes the middle overs, and scoring surges again at the death.</p>
+    <p><b>Big hits come in twos.</b> A &ldquo;two sixes&rdquo; (or two fours) is played <b>across two deliveries</b> &mdash; one hit per ball. If the first lands on the last ball of the over, the ends change and the <b>other batsman</b> banks the second. And in a chase, the moment the target is passed the innings ends, so the second hit is never needed.</p>
     <p class="rules-note">Seeds are random &mdash; every simulation is a fresh match. Replay re-runs the last one identically.</p>
     <table class="dice-tbl">
       <thead><tr><th>ROLL</th><th>RATING &gt;5</th><th>RATING &le;5</th><th>IA (&gt;5)</th></tr></thead>
