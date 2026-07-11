@@ -438,7 +438,11 @@ function renderScorecardsAt(idx) {
   const c2 = Math.max(0, played - inn1.ballLog.length);
   $("panel-innings1").innerHTML = scorecardHtml(inn1, inn2, progressiveInnings(inn1, c1), false);
   if (c2 > 0) $("panel-innings2").innerHTML = scorecardHtml(inn2, inn1, progressiveInnings(inn2, c2), true);
-  else $("panel-innings2").innerHTML = `<div class="empty-panel">${escapeHtml(m.battingSecond)} are yet to bat — chasing ${m.target}.</div>`;
+  // never reveal the target while the 1st innings is still being played out
+  else if (c1 >= inn1.ballLog.length)
+    $("panel-innings2").innerHTML = `<div class="empty-panel">${escapeHtml(m.battingSecond)} are yet to bat — chasing ${m.target}.</div>`;
+  else
+    $("panel-innings2").innerHTML = `<div class="empty-panel">${escapeHtml(m.battingSecond)} bat second — the 1st innings is still in progress.</div>`;
 }
 
 function scorecardHtml(inn, other, prog, isChase) {
