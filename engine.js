@@ -346,14 +346,17 @@ function simulateInnings(battingTeam, fieldingTeam, rng, opts) {
         d1 = rollDie(rng); d2 = rollDie(rng);
         res = applyProfile(resolveBall([d1, d2], striker.battingRating, striker.ia),
           [d1, d2], striker.battingRating > 5, striker.ia, profile, phaseName);
-        // "Two sixes"/"Two fours" are split across two deliveries — unless this
-        // is the very last ball of the innings (no next ball to carry it to).
-        if (!lastBallOfInnings && (res.label === "TWO SIXES" || res.label === "TWO FOURS")) {
+        // "Two sixes"/"Two fours" are split across two deliveries. On the very
+        // last ball of the innings there is no next ball to carry the second
+        // hit to — so ONLY THE FIRST counts and the second is simply lost.
+        if (res.label === "TWO SIXES" || res.label === "TWO FOURS") {
           const kind = res.label === "TWO SIXES" ? "SIX" : "FOUR";
           const half = res.label === "TWO SIXES" ? 6 : 4;
-          pendingHit = { runs: half, kind, pair: [d1, d2], branch: res.branch, fromStriker: striker.name };
+          if (!lastBallOfInnings) {
+            pendingHit = { runs: half, kind, pair: [d1, d2], branch: res.branch, fromStriker: striker.name };
+          }
           res = { runs: half, strikes: 0, label: kind, big: true, iaApplied: res.iaApplied, branch: res.branch };
-          compound = { part: "first", toOther: false };
+          compound = { part: lastBallOfInnings ? "only" : "first", toOther: false };
         }
       }
 
@@ -472,6 +475,9 @@ function makeCommentary(res, striker, di, wicket, pair) {
 function compoundCommentary(compound, res, striker, pair) {
   const dice = `[${pair[0]}–${pair[1]}]`;
   const shot = res.runs === 6 ? "SIX" : "FOUR";
+  if (compound.part === "only") {
+    return `${dice} ${shot}! ${striker.name} connects — a two-${shot.toLowerCase()} roll, but that's the FINAL BALL. The second hit dies with the innings.`;
+  }
   if (compound.part === "first") {
     return `${dice} ${shot}! ${striker.name} launches it — first of a two-${shot.toLowerCase()} blow off one roll. The second is still to come.`;
   }

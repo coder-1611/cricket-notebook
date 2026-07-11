@@ -228,12 +228,16 @@
         const r = Math.min(res.runs, 2), s = res.strikes >= 2 ? res.strikes - 1 : res.strikes;
         res = { runs: r, strikes: s, label: E.labelFor(r, s), big: false, iaApplied: res.iaApplied, branch: res.branch };
       }
-      if (!lastBallOfInnings && (res.label === "TWO SIXES" || res.label === "TWO FOURS") && res.runs >= 8) {
+      // Compounds split across two balls; on the innings' FINAL ball there is
+      // no next delivery, so only the first hit counts — the second is lost.
+      if ((res.label === "TWO SIXES" || res.label === "TWO FOURS") && res.runs >= 8) {
         const kind = res.label === "TWO SIXES" ? "SIX" : "FOUR";
         const half = kind === "SIX" ? 6 : 4;
-        inn.pendingHit = { runs: half, kind, pair: [d1, d2], branch: res.branch, fromStriker: striker.name };
+        if (!lastBallOfInnings) {
+          inn.pendingHit = { runs: half, kind, pair: [d1, d2], branch: res.branch, fromStriker: striker.name };
+        }
         res = { runs: half, strikes: 0, label: kind, big: true, iaApplied: res.iaApplied, branch: res.branch };
-        compound = { part: "first", toOther: false };
+        compound = { part: lastBallOfInnings ? "only" : "first", toOther: false };
       }
     }
 

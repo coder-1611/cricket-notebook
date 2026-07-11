@@ -427,6 +427,7 @@
         ? `OUT! ${e.striker} runs out of road — ${plural(e.totalStrikes, "total strike")}. ${e.strikerRuns === 0 ? "A duck!" : `Gone for ${e.strikerRuns}.`}`
         : `OUT! ${e.bowler} has worked ${e.striker} over — ${plural(e.bowlerStrikes, "strike")} of his own. WICKET!`;
     }
+    if (e.compound === "only") return `${e.label}! A double blow off the roll — but that's the final ball, so the second one dies with the innings.`;
     if (e.compound === "first") return `${e.label}! First blow of a double — one more coming…`;
     if (e.compound === "second") return e.compoundToOther
       ? `${e.label} again! New over, new end — ${e.striker} banks the second one.`
@@ -610,6 +611,7 @@
       else if (ev.runs > 0) { txt = ev.runs === 1 ? "1 RUN" : ev.runs + " RUNS"; subtxt = ev.intent === "def" ? "blocked out, safe" : ev.runs === 1 ? "pushed into the gap" : "placed and run hard"; }
       else { txt = "DOT BALL"; subtxt = ev.intent === "def" ? "dead-batted — pressure soaked" : "watchful — no run"; }
       if (ev.compound === "first") subtxt += " … and there's ANOTHER coming!";
+      if (ev.compound === "only") subtxt += " — final ball, the second hit is lost!";
       r.textContent = txt; r.className = "dl-result " + cls;
       sub.textContent = subtxt;
 

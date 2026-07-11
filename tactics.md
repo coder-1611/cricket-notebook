@@ -178,10 +178,11 @@ it is scored as **two separate deliveries**, one hit each, in sequence:
 * **In a chase:** the innings ends the instant the target is passed, so if the
   first hit wins it, **the second is never played** (e.g. needing 6, a 6,6 roll
   wins on the first six — final score +6, not +12).
-* **On the final ball of an innings** there is no next delivery to carry to, so the
-  compound is scored whole (12/8) on that ball.
+* **On the final ball of an innings** there is no next delivery to carry to, so
+  **only the first hit counts** (6/4) — the second dies with the innings
+  (`compound: "only"`).
 
-Each half is its own ball-log entry (`compound: "first" | "second"`,
+Each half is its own ball-log entry (`compound: "first" | "second" | "only"`,
 `compoundToOther`), so balls faced, bowler figures, and the worm all stay honest.
 
 ### Powerplay & Death run boost
