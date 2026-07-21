@@ -16,8 +16,55 @@
 (function (root) {
   const DB = "https://flashcards-3d896-default-rtdb.firebaseio.com/cricket-notebook";
 
+  var FB_API_KEY = 'AIzaSyCrXKw01Rfu6CMXi3j79rc1a1XcsZqvzck';
+  var _fbTok = null;
+  function _fbLoadTok() {
+    try { _fbTok = JSON.parse(localStorage.getItem('fbAnonTok:flashcards-3d896')) || null; } catch (e) { _fbTok = null; }
+  }
+  function _fbSaveTok() {
+    try { localStorage.setItem('fbAnonTok:flashcards-3d896', JSON.stringify(_fbTok)); } catch (e) {}
+  }
+  async function fbEnsureTok() {
+    if (!_fbTok) _fbLoadTok();
+    var now = Date.now();
+    if (_fbTok && _fbTok.t && now < _fbTok.e - 300000) return _fbTok.t;
+    try {
+      if (_fbTok && _fbTok.r) {
+        var r = await fetch('https://securetoken.googleapis.com/v1/token?key=' + FB_API_KEY, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(_fbTok.r)
+        });
+        if (r.ok) {
+          var d = await r.json();
+          _fbTok = { t: d.id_token, r: d.refresh_token, e: now + (parseInt(d.expires_in, 10) || 3600) * 1000 };
+          _fbSaveTok();
+          return _fbTok.t;
+        }
+      }
+      var r2 = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + FB_API_KEY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{"returnSecureToken":true}'
+      });
+      if (r2.ok) {
+        var d2 = await r2.json();
+        _fbTok = { t: d2.idToken, r: d2.refreshToken, e: now + (parseInt(d2.expiresIn, 10) || 3600) * 1000 };
+        _fbSaveTok();
+        return _fbTok.t;
+      }
+    } catch (e) {}
+    return null;
+  }
+  async function fbAuthUrl(url) {
+    var t = await fbEnsureTok();
+    if (!t) return url;
+    return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'auth=' + t;
+  }
+
   async function req(method, path, body) {
-    const r = await fetch(`${DB}${path}.json`, {
+    const u = await fbAuthUrl(`${DB}${path}.json`);
+    const r = await fetch(u, {
       method,
       headers: { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body)
